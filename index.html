@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>OSINT Goswami Platform</title>
+    <title>OSINT Ritesh Intelligence Dashboard</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&family=Inter:wght@300;400;500&display=swap" rel="stylesheet">
@@ -109,43 +109,22 @@
             OSINT Ritesh-Intelligence Dashboard
         </h1>
         <p class="text-gray-400 max-w-xl mx-auto leading-relaxed text-sm">
-            Access secure digital intelligence shards across mobile records, vehicles, tax IDs, banking details, and more.
+            Access secure digital intelligence across mobile records, vehicle registrations, and Aadhaar-based lookups.
         </p>
     </header>
 
     <!-- Main Content Container -->
     <main class="w-full max-w-2xl reveal">
-        <!-- Category Selector Grid (10 Modules) -->
-        <div class="grid grid-cols-2 sm:grid-cols-5 gap-2 mb-6">
+        <!-- Category Selector Grid (3 Modules) -->
+        <div class="grid grid-cols-3 gap-2 mb-6">
             <button onclick="switchCategory('number')" id="cat-number" class="category-btn active p-3 text-xs font-semibold rounded-2xl flex flex-col items-center justify-center gap-1.5 text-center">
-                <i class="fas fa-phone-alt text-base"></i> Mobile Info
+                <i class="fas fa-phone-alt text-base"></i> Num Info
             </button>
-            <button onclick="switchCategory('vehicle_full')" id="cat-vehicle_full" class="category-btn p-3 text-xs font-semibold rounded-2xl flex flex-col items-center justify-center gap-1.5 text-center text-gray-400 hover:text-white">
-                <i class="fas fa-car text-base"></i> Vehicle RC
+            <button onclick="switchCategory('vehicle')" id="cat-vehicle" class="category-btn p-3 text-xs font-semibold rounded-2xl flex flex-col items-center justify-center gap-1.5 text-center text-gray-400 hover:text-white">
+                <i class="fas fa-car text-base"></i> Vehicle Full
             </button>
-            <button onclick="switchCategory('vehicle_to_number')" id="cat-vehicle_to_number" class="category-btn p-3 text-xs font-semibold rounded-2xl flex flex-col items-center justify-center gap-1.5 text-center text-gray-400 hover:text-white">
-                <i class="fas fa-exchange-alt text-base"></i> Vehicle2Num
-            </button>
-            <button onclick="switchCategory('pan')" id="cat-pan" class="category-btn p-3 text-xs font-semibold rounded-2xl flex flex-col items-center justify-center gap-1.5 text-center text-gray-400 hover:text-white">
-                <i class="fas fa-id-card text-base"></i> PAN Lookup
-            </button>
-            <button onclick="switchCategory('aadhaar2pan')" id="cat-aadhaar2pan" class="category-btn p-3 text-xs font-semibold rounded-2xl flex flex-col items-center justify-center gap-1.5 text-center text-gray-400 hover:text-white">
-                <i class="fas fa-fingerprint text-base"></i> Aadhaar2PAN
-            </button>
-            <button onclick="switchCategory('imei')" id="cat-imei" class="category-btn p-3 text-xs font-semibold rounded-2xl flex flex-col items-center justify-center gap-1.5 text-center text-gray-400 hover:text-white">
-                <i class="fas fa-mobile text-base"></i> IMEI Check
-            </button>
-            <button onclick="switchCategory('pincode')" id="cat-pincode" class="category-btn p-3 text-xs font-semibold rounded-2xl flex flex-col items-center justify-center gap-1.5 text-center text-gray-400 hover:text-white">
-                <i class="fas fa-map-pin text-base"></i> Pincode
-            </button>
-            <button onclick="switchCategory('ifsc')" id="cat-ifsc" class="category-btn p-3 text-xs font-semibold rounded-2xl flex flex-col items-center justify-center gap-1.5 text-center text-gray-400 hover:text-white">
-                <i class="fas fa-university text-base"></i> IFSC Code
-            </button>
-            <button onclick="switchCategory('tg')" id="cat-tg" class="category-btn p-3 text-xs font-semibold rounded-2xl flex flex-col items-center justify-center gap-1.5 text-center text-gray-400 hover:text-white">
-                <i class="fab fa-telegram text-base"></i> TG2Num
-            </button>
-            <button onclick="switchCategory('aadhaar2num')" id="cat-aadhaar2num" class="category-btn p-3 text-xs font-semibold rounded-2xl flex flex-col items-center justify-center gap-1.5 text-center text-gray-400 hover:text-white">
-                <i class="fas fa-id-badge text-base"></i> Aadhaar2Num
+            <button onclick="switchCategory('aadhaar')" id="cat-aadhaar" class="category-btn p-3 text-xs font-semibold rounded-2xl flex flex-col items-center justify-center gap-1.5 text-center text-gray-400 hover:text-white">
+                <i class="fas fa-id-badge text-base"></i> Aadhaar Info
             </button>
         </div>
 
@@ -204,7 +183,7 @@
             &copy; 2026 Intelligence Network | Internal Access Only
         </p>
         <p class="text-blue-500/50 text-[12px] font-medium tracking-widest">
-            Developed by <span class="text-blue-400">Techno Subho</span>
+            Powered by <span class="text-blue-400">Ritesh</span>
         </p>
     </footer>
 
@@ -213,74 +192,25 @@
 
         const categoryConfig = {
             number: {
-                name: 'Mobile Info',
+                name: 'Num Info',
                 placeholder: 'Enter Mobile Number (e.g. 9162516577)',
                 icon: 'fas fa-phone-alt',
-                title: 'Mobile Identity Intelligence',
-                api: (q) => `https://api.sarkariallupdates.com/api?api=num_info&key=30day&num=${q}`
+                title: 'Mobile Number Intelligence',
+                api: (q) => `https://api.sarkariallupdates.com/api?=num_info&key=30day&num=${q}`
             },
-            vehicle_full: {
-                name: 'Vehicle RC',
-                placeholder: 'Enter Vehicle Number (e.g. KL41V3504)',
+            vehicle: {
+                name: 'Vehicle Full Info',
+                placeholder: 'Enter Vehicle Number (e.g. HR55AL0051)',
                 icon: 'fas fa-car',
-                title: 'Vehicle Registration Intelligence',
-                api: (q) => `https://api.sarkariallupdates.com/api?api=vehicle_full&key=30day&xr=${q}`
+                title: 'Vehicle Full Intelligence',
+                api: (q) => `https://api.sarkariallupdates.com/api?=ultra_vehicle&key=demo&xr=${q}`
             },
-            vehicle_to_number: {
-                name: 'Vehicle2Num',
-                placeholder: 'Enter Vehicle Number (e.g. KL41V3504)',
-                icon: 'fas fa-exchange-alt',
-                title: 'Vehicle to Mobile Intelligence',
-                api: (q) => `https://api.sarkariallupdates.com/api?api=vehicle_to_number&key=30day&xr=${q}`
-            },
-            pan: {
-                name: 'PAN Lookup',
-                placeholder: 'Enter PAN Number (e.g. ABCDE1234F)',
-                icon: 'fas fa-id-card',
-                title: 'Taxpayer Intelligence',
-                api: (q) => `https://api.sarkariallupdates.com/api?api=pan2dob_name&key=30day&pan2dob_name=${encodeURIComponent(q)}`
-            },
-            aadhaar2pan: {
-                name: 'Aadhaar2PAN',
-                placeholder: 'Enter Aadhaar Number',
-                icon: 'fas fa-fingerprint',
-                title: 'Aadhaar to PAN Intelligence',
-                api: (q) => `https://api.sarkariallupdates.com/api?api=aadhaar2pan&key=30day&aadhaar2pan=${q}`
-            },
-            imei: {
-                name: 'IMEI Check',
-                placeholder: 'Enter 15-digit IMEI Number',
-                icon: 'fas fa-mobile',
-                title: 'Device IMEI Intelligence',
-                api: (q) => `https://api.sarkariallupdates.com/api?api=imei&key=30day&imei=${q}`
-            },
-            pincode: {
-                name: 'Pincode',
-                placeholder: 'Enter 6-digit Pincode (e.g. 854116)',
-                icon: 'fas fa-map-pin',
-                title: 'Postal Pincode Intelligence',
-                api: (q) => `https://api.sarkariallupdates.com/api?api=pincode&key=30day&pincode=${q}`
-            },
-            ifsc: {
-                name: 'IFSC Code',
-                placeholder: 'Enter IFSC Code (e.g. SBIN0001234)',
-                icon: 'fas fa-university',
-                title: 'Banking IFSC Intelligence',
-                api: (q) => `https://api.sarkariallupdates.com/api?api=ifse&key=30day&ifse=${encodeURIComponent(q)}`
-            },
-            tg: {
-                name: 'TG2Num',
-                placeholder: 'Enter Telegram Username (e.g. @username)',
-                icon: 'fab fa-telegram',
-                title: 'Telegram Identity Intelligence',
-                api: (q) => `https://api.sarkariallupdates.com/api?api=tg&key=30day&q=${encodeURIComponent(q)}`
-            },
-            aadhaar2num: {
-                name: 'Aadhaar2Num',
-                placeholder: 'Enter Aadhaar Number',
+            aadhaar: {
+                name: 'Aadhaar Info',
+                placeholder: 'Enter 12-digit Aadhaar Number (e.g. 677531893455)',
                 icon: 'fas fa-id-badge',
-                title: 'Aadhaar to Mobile Intelligence',
-                api: (q) => `https://api.sarkariallupdates.com/api?api=addhaar2num&key=30day&q=${q}`
+                title: 'Aadhaar Intelligence',
+                api: (q) => `https://api.sarkariallupdates.com/api?=addhaar2num&key=30day&q=${q}`
             }
         };
 
@@ -321,6 +251,12 @@
                 targetInput.classList.add('ring-2', 'ring-red-500/50');
                 setTimeout(() => targetInput.classList.remove('ring-2', 'ring-red-500/50'), 2000);
                 return;
+            }
+
+            // Vehicle number ko uppercase
+            if (currentCategory === 'vehicle') {
+                queryVal = queryVal.toUpperCase();
+                targetInput.value = queryVal;
             }
 
             loading.classList.remove('hidden');
@@ -365,7 +301,7 @@
 
                 const cleanStr = (str) => (str || '').replace(/[\r\n]+/g, ' ').trim();
 
-                records.forEach((rec, idx) => {
+                records.forEach((rec) => {
                     // Build cards dynamically from key-value pairs of the record object
                     for (const [key, val] of Object.entries(rec)) {
                         if (val !== null && val !== undefined && val !== '' && key !== 'oid') {
