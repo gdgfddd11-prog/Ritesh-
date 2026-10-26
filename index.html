@@ -1,343 +1,403 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>API Tools - Num Info | Vehicle Info | Aadhaar Info</title>
-<style>
-  * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', sans-serif; }
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OSINT Goswami Platform</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&family=Inter:wght@300;400;500&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #3b82f6;
+            --accent: #06b6d4;
+            --bg-dark: #0f172a;
+        }
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-dark);
+            color: #f8fafc;
+            overflow-x: hidden;
+            margin: 0;
+        }
+        h1, h2, button { font-family: 'Poppins', sans-serif; }
 
-  body {
-    background: linear-gradient(135deg, #0f0c29, #302b63, #24243e);
-    min-height: 100vh;
-    color: #fff;
-    padding: 20px;
-  }
+        .mesh-bg {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            z-index: -1;
+            background:
+                radial-gradient(at 0% 0%, hsla(217,100%,50%,0.15) 0px, transparent 50%),
+                radial-gradient(at 100% 0%, hsla(180,100%,50%,0.1) 0px, transparent 50%),
+                radial-gradient(at 100% 100%, hsla(280,100%,50%,0.1) 0px, transparent 50%),
+                radial-gradient(at 0% 100%, hsla(200,100%,50%,0.15) 0px, transparent 50%);
+            animation: mesh-flow 20s ease-in-out infinite alternate;
+        }
+        @keyframes mesh-flow {
+            0% { transform: scale(1); }
+            100% { transform: scale(1.1); }
+        }
 
-  .container {
-    max-width: 900px;
-    margin: 0 auto;
-  }
+        .premium-glass {
+            background: rgba(30, 41, 59, 0.75);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.4);
+        }
 
-  header {
-    text-align: center;
-    margin-bottom: 30px;
-  }
+        .glass-input {
+            background: rgba(15, 23, 42, 0.6);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: white;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .glass-input:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 15px rgba(59, 130, 246, 0.3);
+            outline: none;
+            background: rgba(15, 23, 42, 0.8);
+        }
 
-  header h1 {
-    font-size: 2rem;
-    background: linear-gradient(90deg, #00c6ff, #0072ff);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    margin-bottom: 8px;
-  }
+        .reveal { animation: revealUp 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards; opacity: 0; }
+        @keyframes revealUp {
+            from { transform: translateY(30px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
 
-  header p { color: #aaa; font-size: 0.9rem; }
+        .category-btn {
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+        .category-btn.active {
+            background: rgba(59, 130, 246, 0.2);
+            border-color: rgba(59, 130, 246, 0.5);
+            color: #60a5fa;
+            box-shadow: 0 0 20px rgba(59, 130, 246, 0.2);
+        }
 
-  /* Tabs */
-  .tabs {
-    display: flex;
-    gap: 10px;
-    margin-bottom: 20px;
-    flex-wrap: wrap;
-  }
+        .loader {
+            border: 3px solid rgba(59, 130, 246, 0.1);
+            border-top: 3px solid var(--primary);
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
 
-  .tab-btn {
-    flex: 1;
-    padding: 12px;
-    border: none;
-    border-radius: 10px;
-    background: rgba(255,255,255,0.08);
-    color: #ccc;
-    cursor: pointer;
-    font-weight: 600;
-    transition: 0.3s;
-    min-width: 120px;
-  }
-
-  .tab-btn:hover { background: rgba(255,255,255,0.15); }
-
-  .tab-btn.active {
-    background: linear-gradient(90deg, #00c6ff, #0072ff);
-    color: #fff;
-    box-shadow: 0 4px 15px rgba(0,114,255,0.4);
-  }
-
-  /* Card */
-  .card {
-    background: rgba(255,255,255,0.07);
-    backdrop-filter: blur(10px);
-    border: 1px solid rgba(255,255,255,0.1);
-    border-radius: 16px;
-    padding: 24px;
-    margin-bottom: 20px;
-  }
-
-  .tab-content { display: none; }
-  .tab-content.active { display: block; }
-
-  label {
-    display: block;
-    margin-bottom: 8px;
-    font-size: 0.9rem;
-    color: #bbb;
-  }
-
-  input {
-    width: 100%;
-    padding: 12px 14px;
-    border-radius: 10px;
-    border: 1px solid rgba(255,255,255,0.15);
-    background: rgba(0,0,0,0.3);
-    color: #fff;
-    font-size: 1rem;
-    outline: none;
-    margin-bottom: 14px;
-  }
-
-  input:focus { border-color: #00c6ff; }
-
-  .btn {
-    width: 100%;
-    padding: 13px;
-    border: none;
-    border-radius: 10px;
-    background: linear-gradient(90deg, #00c6ff, #0072ff);
-    color: #fff;
-    font-weight: 700;
-    font-size: 1rem;
-    cursor: pointer;
-    transition: 0.3s;
-  }
-
-  .btn:hover { opacity: 0.9; transform: translateY(-1px); }
-  .btn:disabled { opacity: 0.5; cursor: not-allowed; }
-
-  /* Result */
-  .result {
-    margin-top: 20px;
-    background: rgba(0,0,0,0.35);
-    border-radius: 12px;
-    padding: 18px;
-    display: none;
-    max-height: 500px;
-    overflow-y: auto;
-  }
-
-  .result.show { display: block; }
-
-  .result h3 {
-    margin-bottom: 12px;
-    color: #00c6ff;
-    font-size: 1rem;
-    border-bottom: 1px solid rgba(255,255,255,0.1);
-    padding-bottom: 8px;
-  }
-
-  .data-row {
-    display: flex;
-    justify-content: space-between;
-    padding: 8px 0;
-    border-bottom: 1px dashed rgba(255,255,255,0.08);
-    font-size: 0.9rem;
-    gap: 10px;
-  }
-
-  .data-row:last-child { border-bottom: none; }
-
-  .data-row .key { color: #888; text-transform: capitalize; }
-  .data-row .val { color: #fff; text-align: right; word-break: break-word; }
-
-  .loader {
-    text-align: center;
-    padding: 20px;
-    color: #00c6ff;
-  }
-
-  .spinner {
-    width: 32px; height: 32px;
-    border: 3px solid rgba(0,198,255,0.2);
-    border-top-color: #00c6ff;
-    border-radius: 50%;
-    margin: 0 auto 10px;
-    animation: spin 0.8s linear infinite;
-  }
-
-  @keyframes spin { to { transform: rotate(360deg); } }
-
-  .error {
-    color: #ff6b6b;
-    background: rgba(255,107,107,0.1);
-    border: 1px solid rgba(255,107,107,0.3);
-    padding: 12px;
-    border-radius: 8px;
-    font-size: 0.9rem;
-  }
-
-  footer {
-    text-align: center;
-    color: #666;
-    font-size: 0.8rem;
-    margin-top: 30px;
-  }
-
-  @media (max-width: 480px) {
-    header h1 { font-size: 1.4rem; }
-    .tab-btn { font-size: 0.8rem; padding: 10px 6px; }
-  }
-</style>
+        .data-card {
+            background: rgba(255, 255, 255, 0.03);
+            border-radius: 12px;
+            padding: 1rem;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            transition: transform 0.2s ease;
+        }
+        .data-card:hover { transform: translateY(-2px); background: rgba(255, 255, 255, 0.06); }
+    </style>
 </head>
-<body>
+<body class="min-h-screen flex flex-col items-center py-10 px-4 sm:px-6">
+    <div class="mesh-bg"></div>
 
-<div class="container">
-  <header>
-    <h1>🚀 API Tools</h1>
-    <p>Number Info • Vehicle Full Info • Aadhaar Info</p>
-  </header>
+    <!-- Header Section -->
+    <header class="text-center mb-8 reveal">
+        <div class="inline-block p-2 px-4 rounded-full bg-blue-500/10 border border-blue-500/20 text-blue-400 text-xs font-bold uppercase tracking-widest mb-3">
+            Advanced Intelligence Platform
+        </div>
+        <h1 class="text-4xl sm:text-5xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-cyan-400 mb-3">
+            OSINT Ritesh-Intelligence Dashboard
+        </h1>
+        <p class="text-gray-400 max-w-xl mx-auto leading-relaxed text-sm">
+            Access secure digital intelligence shards across mobile records, vehicles, tax IDs, banking details, and more.
+        </p>
+    </header>
 
-  <div class="tabs">
-    <button class="tab-btn active" data-tab="num">📞 Num Info</button>
-    <button class="tab-btn" data-tab="vehicle">🚗 Vehicle Info</button>
-    <button class="tab-btn" data-tab="aadhaar">🆔 Aadhaar Info</button>
-  </div>
+    <!-- Main Content Container -->
+    <main class="w-full max-w-2xl reveal">
+        <!-- Category Selector Grid (10 Modules) -->
+        <div class="grid grid-cols-2 sm:grid-cols-5 gap-2 mb-6">
+            <button onclick="switchCategory('number')" id="cat-number" class="category-btn active p-3 text-xs font-semibold rounded-2xl flex flex-col items-center justify-center gap-1.5 text-center">
+                <i class="fas fa-phone-alt text-base"></i> Mobile Info
+            </button>
+            <button onclick="switchCategory('vehicle_full')" id="cat-vehicle_full" class="category-btn p-3 text-xs font-semibold rounded-2xl flex flex-col items-center justify-center gap-1.5 text-center text-gray-400 hover:text-white">
+                <i class="fas fa-car text-base"></i> Vehicle RC
+            </button>
+            <button onclick="switchCategory('vehicle_to_number')" id="cat-vehicle_to_number" class="category-btn p-3 text-xs font-semibold rounded-2xl flex flex-col items-center justify-center gap-1.5 text-center text-gray-400 hover:text-white">
+                <i class="fas fa-exchange-alt text-base"></i> Vehicle2Num
+            </button>
+            <button onclick="switchCategory('pan')" id="cat-pan" class="category-btn p-3 text-xs font-semibold rounded-2xl flex flex-col items-center justify-center gap-1.5 text-center text-gray-400 hover:text-white">
+                <i class="fas fa-id-card text-base"></i> PAN Lookup
+            </button>
+            <button onclick="switchCategory('aadhaar2pan')" id="cat-aadhaar2pan" class="category-btn p-3 text-xs font-semibold rounded-2xl flex flex-col items-center justify-center gap-1.5 text-center text-gray-400 hover:text-white">
+                <i class="fas fa-fingerprint text-base"></i> Aadhaar2PAN
+            </button>
+            <button onclick="switchCategory('imei')" id="cat-imei" class="category-btn p-3 text-xs font-semibold rounded-2xl flex flex-col items-center justify-center gap-1.5 text-center text-gray-400 hover:text-white">
+                <i class="fas fa-mobile text-base"></i> IMEI Check
+            </button>
+            <button onclick="switchCategory('pincode')" id="cat-pincode" class="category-btn p-3 text-xs font-semibold rounded-2xl flex flex-col items-center justify-center gap-1.5 text-center text-gray-400 hover:text-white">
+                <i class="fas fa-map-pin text-base"></i> Pincode
+            </button>
+            <button onclick="switchCategory('ifsc')" id="cat-ifsc" class="category-btn p-3 text-xs font-semibold rounded-2xl flex flex-col items-center justify-center gap-1.5 text-center text-gray-400 hover:text-white">
+                <i class="fas fa-university text-base"></i> IFSC Code
+            </button>
+            <button onclick="switchCategory('tg')" id="cat-tg" class="category-btn p-3 text-xs font-semibold rounded-2xl flex flex-col items-center justify-center gap-1.5 text-center text-gray-400 hover:text-white">
+                <i class="fab fa-telegram text-base"></i> TG2Num
+            </button>
+            <button onclick="switchCategory('aadhaar2num')" id="cat-aadhaar2num" class="category-btn p-3 text-xs font-semibold rounded-2xl flex flex-col items-center justify-center gap-1.5 text-center text-gray-400 hover:text-white">
+                <i class="fas fa-id-badge text-base"></i> Aadhaar2Num
+            </button>
+        </div>
 
-  <!-- TAB 1: NUM INFO -->
-  <div id="num" class="tab-content active">
-    <div class="card">
-      <label>Mobile Number (10 digit)</label>
-      <input type="text" id="numInput" placeholder="e.g. 9162516577" maxlength="10" />
-      <button class="btn" onclick="getNumInfo()">🔍 Get Info</button>
-      <div class="result" id="numResult"></div>
-    </div>
-  </div>
+        <!-- Search Card -->
+        <div class="premium-glass p-6 rounded-3xl mb-8">
+            <div class="flex flex-col sm:flex-row gap-3">
+                <div class="relative flex-grow">
+                    <i id="input-icon" class="fas fa-phone-alt absolute left-4 top-1/2 -translate-y-1/2 text-gray-500"></i>
+                    <input type="text" id="targetInput" placeholder="Enter Mobile Number (e.g. 9162516577)"
+                        class="w-full pl-12 pr-4 py-4 glass-input rounded-2xl text-lg placeholder-gray-600 font-medium"
+                        onkeydown="if(event.key==='Enter') executeSearch()">
+                </div>
+                <button onclick="executeSearch()"
+                    class="bg-blue-600 hover:bg-blue-500 text-white px-8 py-4 rounded-2xl font-bold shadow-lg shadow-blue-900/20 transition-all hover:scale-105 active:scale-95 whitespace-nowrap">
+                    Search
+                </button>
+            </div>
+        </div>
 
-  <!-- TAB 2: VEHICLE INFO -->
-  <div id="vehicle" class="tab-content">
-    <div class="card">
-      <label>Vehicle Registration Number</label>
-      <input type="text" id="vehInput" placeholder="e.g. HR55AL0051" />
-      <button class="btn" onclick="getVehicleInfo()">🔍 Get Vehicle Info</button>
-      <div class="result" id="vehResult"></div>
-    </div>
-  </div>
+        <!-- Loading View -->
+        <div id="loading" class="hidden flex flex-col items-center py-10">
+            <div class="loader mb-4"></div>
+            <p class="text-blue-400 font-medium animate-pulse">Scanning target intelligence matrix...</p>
+        </div>
 
-  <!-- TAB 3: AADHAAR INFO -->
-  <div id="aadhaar" class="tab-content">
-    <div class="card">
-      <label>Aadhaar Number (12 digit)</label>
-      <input type="text" id="aadInput" placeholder="e.g. 677531893455" maxlength="12" />
-      <button class="btn" onclick="getAadhaarInfo()">🔍 Get Aadhaar Info</button>
-      <div class="result" id="aadResult"></div>
-    </div>
-  </div>
+        <!-- Generic Results Container -->
+        <div id="resultContainer" class="hidden reveal">
+            <div class="premium-glass rounded-3xl overflow-hidden border border-white/5">
+                <div class="bg-gradient-to-r from-blue-600 to-cyan-600 p-6 text-white flex justify-between items-center">
+                    <div>
+                        <h2 id="resultTitle" class="text-2xl font-bold tracking-tight">Intelligence Report</h2>
+                        <p class="text-xs text-white/70 mt-1 uppercase tracking-widest identity-time"></p>
+                    </div>
+                    <span id="recordCount" class="bg-black/20 backdrop-blur-md px-4 py-2 rounded-xl text-sm font-bold border border-white/10">1 Record</span>
+                </div>
 
-  <footer>© 2024 API Tools. All rights reserved.</footer>
-</div>
+                <div id="resultCardsGrid" class="p-6 grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <!-- Dynamically populated cards -->
+                </div>
+            </div>
+        </div>
 
-<script>
-/* ================= TAB SWITCHING ================= */
-const tabs = document.querySelectorAll('.tab-btn');
-const contents = document.querySelectorAll('.tab-content');
+        <!-- Error State -->
+        <div id="errorBox" class="hidden reveal mt-6 p-6 rounded-2xl bg-red-500/10 border border-red-500/20 flex items-center">
+            <i class="fas fa-exclamation-triangle text-red-500 text-2xl mr-4"></i>
+            <div>
+                <h4 class="text-red-500 font-bold uppercase text-xs tracking-widest mb-1">Query Interrupted</h4>
+                <p id="errorMsg" class="text-red-200 text-sm">Target record footprint could not be mapped.</p>
+            </div>
+        </div>
+    </main>
 
-tabs.forEach(btn => {
-  btn.addEventListener('click', () => {
-    tabs.forEach(b => b.classList.remove('active'));
-    contents.forEach(c => c.classList.remove('active'));
-    btn.classList.add('active');
-    document.getElementById(btn.dataset.tab).classList.add('active');
-  });
-});
+    <!-- Footer -->
+    <footer class="mt-auto py-10 text-center reveal">
+        <p class="text-gray-600 text-[10px] font-bold uppercase tracking-[0.3em] mb-2">
+            &copy; 2026 Intelligence Network | Internal Access Only
+        </p>
+        <p class="text-blue-500/50 text-[12px] font-medium tracking-widest">
+            Developed by <span class="text-blue-400">Techno Subho</span>
+        </p>
+    </footer>
 
-/* ================= HELPERS ================= */
-function showLoader(el) {
-  el.className = 'result show';
-  el.innerHTML = '<div class="loader"><div class="spinner"></div>Fetching data...</div>';
-}
+    <script>
+        let currentCategory = 'number';
 
-function showError(el, msg) {
-  el.className = 'result show';
-  el.innerHTML = `<div class="error">❌ ${msg}</div>`;
-}
+        const categoryConfig = {
+            number: {
+                name: 'Mobile Info',
+                placeholder: 'Enter Mobile Number (e.g. 9162516577)',
+                icon: 'fas fa-phone-alt',
+                title: 'Mobile Identity Intelligence',
+                api: (q) => `https://api.sarkariallupdates.com/api?api=num_info&key=30day&num=${q}`
+            },
+            vehicle_full: {
+                name: 'Vehicle RC',
+                placeholder: 'Enter Vehicle Number (e.g. KL41V3504)',
+                icon: 'fas fa-car',
+                title: 'Vehicle Registration Intelligence',
+                api: (q) => `https://api.sarkariallupdates.com/api?api=vehicle_full&key=30day&xr=${q}`
+            },
+            vehicle_to_number: {
+                name: 'Vehicle2Num',
+                placeholder: 'Enter Vehicle Number (e.g. KL41V3504)',
+                icon: 'fas fa-exchange-alt',
+                title: 'Vehicle to Mobile Intelligence',
+                api: (q) => `https://api.sarkariallupdates.com/api?api=vehicle_to_number&key=30day&xr=${q}`
+            },
+            pan: {
+                name: 'PAN Lookup',
+                placeholder: 'Enter PAN Number (e.g. ABCDE1234F)',
+                icon: 'fas fa-id-card',
+                title: 'Taxpayer Intelligence',
+                api: (q) => `https://api.sarkariallupdates.com/api?api=pan2dob_name&key=30day&pan2dob_name=${encodeURIComponent(q)}`
+            },
+            aadhaar2pan: {
+                name: 'Aadhaar2PAN',
+                placeholder: 'Enter Aadhaar Number',
+                icon: 'fas fa-fingerprint',
+                title: 'Aadhaar to PAN Intelligence',
+                api: (q) => `https://api.sarkariallupdates.com/api?api=aadhaar2pan&key=30day&aadhaar2pan=${q}`
+            },
+            imei: {
+                name: 'IMEI Check',
+                placeholder: 'Enter 15-digit IMEI Number',
+                icon: 'fas fa-mobile',
+                title: 'Device IMEI Intelligence',
+                api: (q) => `https://api.sarkariallupdates.com/api?api=imei&key=30day&imei=${q}`
+            },
+            pincode: {
+                name: 'Pincode',
+                placeholder: 'Enter 6-digit Pincode (e.g. 854116)',
+                icon: 'fas fa-map-pin',
+                title: 'Postal Pincode Intelligence',
+                api: (q) => `https://api.sarkariallupdates.com/api?api=pincode&key=30day&pincode=${q}`
+            },
+            ifsc: {
+                name: 'IFSC Code',
+                placeholder: 'Enter IFSC Code (e.g. SBIN0001234)',
+                icon: 'fas fa-university',
+                title: 'Banking IFSC Intelligence',
+                api: (q) => `https://api.sarkariallupdates.com/api?api=ifse&key=30day&ifse=${encodeURIComponent(q)}`
+            },
+            tg: {
+                name: 'TG2Num',
+                placeholder: 'Enter Telegram Username (e.g. @username)',
+                icon: 'fab fa-telegram',
+                title: 'Telegram Identity Intelligence',
+                api: (q) => `https://api.sarkariallupdates.com/api?api=tg&key=30day&q=${encodeURIComponent(q)}`
+            },
+            aadhaar2num: {
+                name: 'Aadhaar2Num',
+                placeholder: 'Enter Aadhaar Number',
+                icon: 'fas fa-id-badge',
+                title: 'Aadhaar to Mobile Intelligence',
+                api: (q) => `https://api.sarkariallupdates.com/api?api=addhaar2num&key=30day&q=${q}`
+            }
+        };
 
-// Recursive renderer for nested objects
-function renderData(obj, title = 'Result') {
-  let html = `<h3>✅ ${title}</h3>`;
-  html += renderObject(obj);
-  return html;
-}
+        function switchCategory(cat) {
+            currentCategory = cat;
+            const config = categoryConfig[cat];
 
-function renderObject(obj) {
-  let html = '';
-  for (const [k, v] of Object.entries(obj)) {
-    if (v === null || v === undefined) continue;
-    if (typeof v === 'object') {
-      html += `<div class="data-row"><span class="key">${formatKey(k)}</span></div>`;
-      html += `<div style="padding-left:15px;">${renderObject(v)}</div>`;
-    } else {
-      html += `<div class="data-row">
-        <span class="key">${formatKey(k)}</span>
-        <span class="val">${v}</span>
-      </div>`;
-    }
-  }
-  return html;
-}
+            // Update active button state
+            document.querySelectorAll('.category-btn').forEach(btn => {
+                btn.classList.remove('active');
+                btn.classList.add('text-gray-400');
+            });
+            const activeBtn = document.getElementById(`cat-${cat}`);
+            if (activeBtn) {
+                activeBtn.classList.add('active');
+                activeBtn.classList.remove('text-gray-400');
+            }
 
-function formatKey(k) {
-  return k.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
-}
+            const targetInput = document.getElementById('targetInput');
+            const inputIcon = document.getElementById('input-icon');
+            targetInput.placeholder = config.placeholder;
+            inputIcon.className = `${config.icon} absolute left-4 top-1/2 -translate-y-1/2 text-gray-500`;
+            targetInput.value = '';
 
-/* ================= API 1: NUM INFO ================= */
-async function getNumInfo() {
-  const num = document.getElementById('numInput').value.trim();
-  const res = document.getElementById('numResult');
-  if (!num || num.length < 10) return showError(res, 'Valid 10-digit number daalein.');
+            document.getElementById('resultContainer').classList.add('hidden');
+            document.getElementById('errorBox').classList.add('hidden');
+        }
 
-  showLoader(res);
-  try {
-    const url = `https://api.sarkariallupdates.com/api?=num_info&key=30day&num=${num}`;
-    const r = await fetch(url);
-    const data = await r.json();
-    res.innerHTML = renderData(data, 'Number Info');
-  } catch (e) {
-    showError(res, 'API Error: ' + e.message);
-  }
-}
+        async function executeSearch() {
+            const targetInput = document.getElementById('targetInput');
+            let queryVal = targetInput.value.trim();
+            const loading = document.getElementById('loading');
+            const resultContainer = document.getElementById('resultContainer');
+            const errorBox = document.getElementById('errorBox');
+            const config = categoryConfig[currentCategory];
 
-/* ================= API 2: VEHICLE INFO ================= */
-async function getVehicleInfo() {
-  const veh = document.getElementById('vehInput').value.trim().toUpperCase();
-  const res = document.getElementById('vehResult');
-  if (!veh) return showError(res, 'Vehicle number daalein.');
+            if (!queryVal) {
+                targetInput.classList.add('ring-2', 'ring-red-500/50');
+                setTimeout(() => targetInput.classList.remove('ring-2', 'ring-red-500/50'), 2000);
+                return;
+            }
 
-  showLoader(res);
-  try {
-    const url = `https://api.sarkariallupdates.com/api?=ultra_vehicle&key=demo&xr=${veh}`;
-    const r = await fetch(url);
-    const data = await r.json();
-    res.innerHTML = renderData(data, 'Vehicle Full Info');
-  } catch (e) {
-    showError(res, 'API Error: ' + e.message);
-  }
-}
+            loading.classList.remove('hidden');
+            resultContainer.classList.add('hidden');
+            errorBox.classList.add('hidden');
 
-/* ================= API 3: AADHAAR INFO ================= */
-async function getAadhaarInfo() {
-  const aad = document.getElementById('aadInput').value.trim();
-  const res = document.getElementById('aadResult');
-  if (!aad || aad.length !== 12) return showError(res, 'Valid 12-digit Aadhaar number daalein.');
+            try {
+                const endpoint = config.api(queryVal);
+                const response = await fetch(endpoint);
+                if (!response.ok) {
+                    throw new Error(`Server Error (${response.status}). Target server might be unreachable.`);
+                }
+                const data = await response.json();
 
-  showLoader(res);
-  try {
-    const url = `https://api.sarkariallupdates.com/api?=addhaar2num&key=30day&q=${aad}`;
-    const r = await fetch(url);
-    const data = await r.json();
-    res.innerHTML = renderData(data, 'Aadhaar Info');
-  } catch (e) {
-    showError(res, 'API Error: ' + e.message);
-  }
-}
-</script>
+                if (data.error || (data.status === 'false' || data.success === false)) {
+                    throw new Error(data.message || data.error || 'No records found for this query.');
+                }
 
+                // Update timestamps
+                document.querySelectorAll('.identity-time').forEach(el => {
+                    el.innerText = `Reported: ${new Date().toLocaleTimeString()}`;
+                });
+
+                document.getElementById('resultTitle').innerText = config.title;
+
+                // Extract record list from data or results
+                let records = [];
+                if (Array.isArray(data.data)) {
+                    records = data.data;
+                } else if (Array.isArray(data.Results)) {
+                    records = data.Results;
+                } else if (data.data) {
+                    records = [data.data];
+                } else {
+                    records = [data];
+                }
+
+                document.getElementById('recordCount').innerText = `${records.length} Record${records.length > 1 ? 's' : ''} Found`;
+
+                const grid = document.getElementById('resultCardsGrid');
+                grid.innerHTML = '';
+
+                const cleanStr = (str) => (str || '').replace(/[\r\n]+/g, ' ').trim();
+
+                records.forEach((rec, idx) => {
+                    // Build cards dynamically from key-value pairs of the record object
+                    for (const [key, val] of Object.entries(rec)) {
+                        if (val !== null && val !== undefined && val !== '' && key !== 'oid') {
+                            const card = document.createElement('div');
+                            card.className = 'data-card flex items-start col-span-1 md:col-span-2';
+                            card.innerHTML = `
+                                <div class="w-10 h-10 bg-blue-500/20 rounded-lg flex items-center justify-center mr-3 shrink-0">
+                                    <i class="fas fa-info-circle text-blue-400"></i>
+                                </div>
+                                <div class="overflow-hidden">
+                                    <p class="text-[9px] text-gray-500 uppercase font-black tracking-widest">${key.replace(/_/g, ' ')}</p>
+                                    <p class="text-white text-sm font-medium break-words">${cleanStr(String(val))}</p>
+                                </div>
+                            `;
+                            grid.appendChild(card);
+                        }
+                    }
+                });
+
+                resultContainer.classList.remove('hidden');
+
+            } catch (error) {
+                if (error.name === 'TypeError' || error.message === 'Failed to fetch') {
+                    document.getElementById('errorMsg').innerText = 'Network/CORS Error: Browser blocked the request. Please run via a local server (e.g. Live Server) or disable AdBlocker/Brave Shields.';
+                } else {
+                    document.getElementById('errorMsg').innerText = error.message;
+                }
+                errorBox.classList.remove('hidden');
+            } finally {
+                loading.classList.add('hidden');
+            }
+        }
+    </script>
 </body>
 </html>
