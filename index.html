@@ -3,136 +3,187 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>API Lookup Tool</title>
+<title>API Tools - Num Info | Vehicle Info | Aadhaar Info</title>
 <style>
-  * { box-sizing: border-box; margin: 0; padding: 0; }
+  * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', sans-serif; }
+
   body {
-    font-family: 'Segoe UI', Tahoma, sans-serif;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background: linear-gradient(135deg, #0f0c29, #302b63, #24243e);
     min-height: 100vh;
+    color: #fff;
     padding: 20px;
-    color: #333;
   }
+
   .container {
     max-width: 900px;
     margin: 0 auto;
-    background: #fff;
-    border-radius: 12px;
-    box-shadow: 0 10px 40px rgba(0,0,0,0.2);
-    overflow: hidden;
   }
-  header {
-    background: #1a202c;
-    color: #fff;
-    padding: 20px;
-    text-align: center;
-  }
-  header h1 { font-size: 22px; }
-  header p { font-size: 13px; opacity: 0.8; margin-top: 4px; }
 
+  header {
+    text-align: center;
+    margin-bottom: 30px;
+  }
+
+  header h1 {
+    font-size: 2rem;
+    background: linear-gradient(90deg, #00c6ff, #0072ff);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    margin-bottom: 8px;
+  }
+
+  header p { color: #aaa; font-size: 0.9rem; }
+
+  /* Tabs */
   .tabs {
     display: flex;
-    background: #2d3748;
-  }
-  .tab {
-    flex: 1;
-    padding: 14px;
-    text-align: center;
-    color: #cbd5e0;
-    cursor: pointer;
-    font-size: 14px;
-    font-weight: 600;
-    border-bottom: 3px solid transparent;
-    transition: 0.2s;
-  }
-  .tab:hover { background: #4a5568; color: #fff; }
-  .tab.active {
-    background: #fff;
-    color: #667eea;
-    border-bottom-color: #667eea;
+    gap: 10px;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
   }
 
-  .panel { padding: 24px; display: none; }
-  .panel.active { display: block; }
+  .tab-btn {
+    flex: 1;
+    padding: 12px;
+    border: none;
+    border-radius: 10px;
+    background: rgba(255,255,255,0.08);
+    color: #ccc;
+    cursor: pointer;
+    font-weight: 600;
+    transition: 0.3s;
+    min-width: 120px;
+  }
+
+  .tab-btn:hover { background: rgba(255,255,255,0.15); }
+
+  .tab-btn.active {
+    background: linear-gradient(90deg, #00c6ff, #0072ff);
+    color: #fff;
+    box-shadow: 0 4px 15px rgba(0,114,255,0.4);
+  }
+
+  /* Card */
+  .card {
+    background: rgba(255,255,255,0.07);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 16px;
+    padding: 24px;
+    margin-bottom: 20px;
+  }
+
+  .tab-content { display: none; }
+  .tab-content.active { display: block; }
 
   label {
     display: block;
-    font-size: 13px;
-    font-weight: 600;
-    margin-bottom: 6px;
-    color: #4a5568;
+    margin-bottom: 8px;
+    font-size: 0.9rem;
+    color: #bbb;
   }
-  input, select {
+
+  input {
     width: 100%;
-    padding: 11px 14px;
-    border: 1px solid #cbd5e0;
-    border-radius: 8px;
-    font-size: 15px;
-    margin-bottom: 14px;
+    padding: 12px 14px;
+    border-radius: 10px;
+    border: 1px solid rgba(255,255,255,0.15);
+    background: rgba(0,0,0,0.3);
+    color: #fff;
+    font-size: 1rem;
     outline: none;
-    transition: 0.2s;
+    margin-bottom: 14px;
   }
-  input:focus, select:focus {
-    border-color: #667eea;
-    box-shadow: 0 0 0 3px rgba(102,126,234,0.15);
-  }
-  button {
+
+  input:focus { border-color: #00c6ff; }
+
+  .btn {
     width: 100%;
     padding: 13px;
-    background: linear-gradient(135deg, #667eea, #764ba2);
-    color: #fff;
     border: none;
-    border-radius: 8px;
-    font-size: 15px;
-    font-weight: 600;
+    border-radius: 10px;
+    background: linear-gradient(90deg, #00c6ff, #0072ff);
+    color: #fff;
+    font-weight: 700;
+    font-size: 1rem;
     cursor: pointer;
-    transition: 0.2s;
+    transition: 0.3s;
   }
-  button:hover { opacity: 0.9; transform: translateY(-1px); }
-  button:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
 
+  .btn:hover { opacity: 0.9; transform: translateY(-1px); }
+  .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+  /* Result */
   .result {
     margin-top: 20px;
-    background: #1a202c;
-    color: #68d391;
-    padding: 16px;
-    border-radius: 8px;
-    font-family: 'Courier New', monospace;
-    font-size: 13px;
-    white-space: pre-wrap;
-    word-break: break-word;
+    background: rgba(0,0,0,0.35);
+    border-radius: 12px;
+    padding: 18px;
+    display: none;
     max-height: 500px;
-    overflow: auto;
-    display: none;
+    overflow-y: auto;
   }
-  .result.show { display: block; }
-  .result.error { color: #fc8181; }
-  .loader {
-    display: none;
-    text-align: center;
-    margin-top: 16px;
-    color: #667eea;
-    font-weight: 600;
-  }
-  .loader.show { display: block; }
 
-  /* Simple formatted table for results */
-  .data-table {
-    width: 100%;
-    border-collapse: collapse;
-    margin-top: 10px;
-    font-family: 'Segoe UI', sans-serif;
-    font-size: 13px;
+  .result.show { display: block; }
+
+  .result h3 {
+    margin-bottom: 12px;
+    color: #00c6ff;
+    font-size: 1rem;
+    border-bottom: 1px solid rgba(255,255,255,0.1);
+    padding-bottom: 8px;
   }
-  .data-table td {
-    padding: 8px 12px;
-    border-bottom: 1px solid #2d3748;
-    color: #e2e8f0;
+
+  .data-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 8px 0;
+    border-bottom: 1px dashed rgba(255,255,255,0.08);
+    font-size: 0.9rem;
+    gap: 10px;
   }
-  .data-table td:first-child {
-    color: #90cdf4;
-    font-weight: 600;
-    width: 40%;
+
+  .data-row:last-child { border-bottom: none; }
+
+  .data-row .key { color: #888; text-transform: capitalize; }
+  .data-row .val { color: #fff; text-align: right; word-break: break-word; }
+
+  .loader {
+    text-align: center;
+    padding: 20px;
+    color: #00c6ff;
+  }
+
+  .spinner {
+    width: 32px; height: 32px;
+    border: 3px solid rgba(0,198,255,0.2);
+    border-top-color: #00c6ff;
+    border-radius: 50%;
+    margin: 0 auto 10px;
+    animation: spin 0.8s linear infinite;
+  }
+
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .error {
+    color: #ff6b6b;
+    background: rgba(255,107,107,0.1);
+    border: 1px solid rgba(255,107,107,0.3);
+    padding: 12px;
+    border-radius: 8px;
+    font-size: 0.9rem;
+  }
+
+  footer {
+    text-align: center;
+    color: #666;
+    font-size: 0.8rem;
+    margin-top: 30px;
+  }
+
+  @media (max-width: 480px) {
+    header h1 { font-size: 1.4rem; }
+    .tab-btn { font-size: 0.8rem; padding: 10px 6px; }
   }
 </style>
 </head>
@@ -140,147 +191,153 @@
 
 <div class="container">
   <header>
-    <h1>🔍 API Lookup Tool</h1>
-    <p>Number Info • Vehicle Info • Aadhaar Info</p>
+    <h1>🚀 API Tools</h1>
+    <p>Number Info • Vehicle Full Info • Aadhaar Info</p>
   </header>
 
   <div class="tabs">
-    <div class="tab active" data-tab="num">📱 Number Info</div>
-    <div class="tab" data-tab="vehicle">🚗 Vehicle Info</div>
-    <div class="tab" data-tab="aadhaar">🆔 Aadhaar Info</div>
+    <button class="tab-btn active" data-tab="num">📞 Num Info</button>
+    <button class="tab-btn" data-tab="vehicle">🚗 Vehicle Info</button>
+    <button class="tab-btn" data-tab="aadhaar">🆔 Aadhaar Info</button>
   </div>
 
-  <!-- NUMBER INFO -->
-  <div class="panel active" id="panel-num">
-    <label>Mobile Number</label>
-    <input type="text" id="num-input" placeholder="e.g. 9162516577" maxlength="12">
-    <button onclick="fetchNumberInfo()">Get Number Info</button>
-    <div class="loader" id="loader-num">⏳ Fetching data...</div>
-    <div class="result" id="result-num"></div>
+  <!-- TAB 1: NUM INFO -->
+  <div id="num" class="tab-content active">
+    <div class="card">
+      <label>Mobile Number (10 digit)</label>
+      <input type="text" id="numInput" placeholder="e.g. 9162516577" maxlength="10" />
+      <button class="btn" onclick="getNumInfo()">🔍 Get Info</button>
+      <div class="result" id="numResult"></div>
+    </div>
   </div>
 
-  <!-- VEHICLE INFO -->
-  <div class="panel" id="panel-vehicle">
-    <label>Vehicle Registration Number</label>
-    <input type="text" id="vehicle-input" placeholder="e.g. HR55AL0051" style="text-transform:uppercase">
-    <button onclick="fetchVehicleInfo()">Get Vehicle Info</button>
-    <div class="loader" id="loader-vehicle">⏳ Fetching data...</div>
-    <div class="result" id="result-vehicle"></div>
+  <!-- TAB 2: VEHICLE INFO -->
+  <div id="vehicle" class="tab-content">
+    <div class="card">
+      <label>Vehicle Registration Number</label>
+      <input type="text" id="vehInput" placeholder="e.g. HR55AL0051" />
+      <button class="btn" onclick="getVehicleInfo()">🔍 Get Vehicle Info</button>
+      <div class="result" id="vehResult"></div>
+    </div>
   </div>
 
-  <!-- AADHAAR INFO -->
-  <div class="panel" id="panel-aadhaar">
-    <label>Aadhaar Number (12 digits)</label>
-    <input type="text" id="aadhaar-input" placeholder="e.g. 677531893455" maxlength="12">
-    <button onclick="fetchAadhaarInfo()">Get Aadhaar Info</button>
-    <div class="loader" id="loader-aadhaar">⏳ Fetching data...</div>
-    <div class="result" id="result-aadhaar"></div>
+  <!-- TAB 3: AADHAAR INFO -->
+  <div id="aadhaar" class="tab-content">
+    <div class="card">
+      <label>Aadhaar Number (12 digit)</label>
+      <input type="text" id="aadInput" placeholder="e.g. 677531893455" maxlength="12" />
+      <button class="btn" onclick="getAadhaarInfo()">🔍 Get Aadhaar Info</button>
+      <div class="result" id="aadResult"></div>
+    </div>
   </div>
+
+  <footer>© 2024 API Tools. All rights reserved.</footer>
 </div>
 
 <script>
-// ============ TAB SWITCHING ============
-document.querySelectorAll('.tab').forEach(tab => {
-  tab.addEventListener('click', () => {
-    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-    document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
-    tab.classList.add('active');
-    document.getElementById('panel-' + tab.dataset.tab).classList.add('active');
+/* ================= TAB SWITCHING ================= */
+const tabs = document.querySelectorAll('.tab-btn');
+const contents = document.querySelectorAll('.tab-content');
+
+tabs.forEach(btn => {
+  btn.addEventListener('click', () => {
+    tabs.forEach(b => b.classList.remove('active'));
+    contents.forEach(c => c.classList.remove('active'));
+    btn.classList.add('active');
+    document.getElementById(btn.dataset.tab).classList.add('active');
   });
 });
 
-// ============ CONFIG ============
-// NOTE: API key ko production mein server-side rakhna chahiye.
-// Yahan demo ke liye rakh rahe hain.
-const API_BASE = 'https://api.sarkariallupdates.com/api';
-const API_KEY  = '30day';
-
-// ============ HELPERS ============
-function showLoader(id, show) {
-  document.getElementById(id).classList.toggle('show', show);
+/* ================= HELPERS ================= */
+function showLoader(el) {
+  el.className = 'result show';
+  el.innerHTML = '<div class="loader"><div class="spinner"></div>Fetching data...</div>';
 }
-function showResult(id, data, isError) {
-  const el = document.getElementById(id);
-  el.classList.add('show');
-  el.classList.toggle('error', !!isError);
 
-  if (typeof data === 'object' && data !== null) {
-    // Pretty JSON
-    el.textContent = JSON.stringify(data, null, 2);
-  } else {
-    el.textContent = data;
+function showError(el, msg) {
+  el.className = 'result show';
+  el.innerHTML = `<div class="error">❌ ${msg}</div>`;
+}
+
+// Recursive renderer for nested objects
+function renderData(obj, title = 'Result') {
+  let html = `<h3>✅ ${title}</h3>`;
+  html += renderObject(obj);
+  return html;
+}
+
+function renderObject(obj) {
+  let html = '';
+  for (const [k, v] of Object.entries(obj)) {
+    if (v === null || v === undefined) continue;
+    if (typeof v === 'object') {
+      html += `<div class="data-row"><span class="key">${formatKey(k)}</span></div>`;
+      html += `<div style="padding-left:15px;">${renderObject(v)}</div>`;
+    } else {
+      html += `<div class="data-row">
+        <span class="key">${formatKey(k)}</span>
+        <span class="val">${v}</span>
+      </div>`;
+    }
   }
+  return html;
 }
 
-// Generic fetch with error handling
-async function callApi(url) {
-  const res = await fetch(url);
-  if (!res.ok) throw new Error('HTTP ' + res.status);
-  const text = await res.text();
-  try { return JSON.parse(text); }
-  catch { return text; }
+function formatKey(k) {
+  return k.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
 }
 
-// ============ 1. NUMBER INFO ============
-async function fetchNumberInfo() {
-  const num = document.getElementById('num-input').value.trim();
-  if (!/^\d{10,12}$/.test(num)) {
-    return showResult('result-num', '❌ Valid 10-12 digit mobile number daaliye.', true);
-  }
-  showLoader('loader-num', true);
+/* ================= API 1: NUM INFO ================= */
+async function getNumInfo() {
+  const num = document.getElementById('numInput').value.trim();
+  const res = document.getElementById('numResult');
+  if (!num || num.length < 10) return showError(res, 'Valid 10-digit number daalein.');
+
+  showLoader(res);
   try {
-    const url = `${API_BASE}?=num_info&key=${API_KEY}&num=${encodeURIComponent(num)}`;
-    const data = await callApi(url);
-    showResult('result-num', data);
+    const url = `https://api.sarkariallupdates.com/api?=num_info&key=30day&num=${num}`;
+    const r = await fetch(url);
+    const data = await r.json();
+    res.innerHTML = renderData(data, 'Number Info');
   } catch (e) {
-    showResult('result-num', '❌ Error: ' + e.message, true);
-  } finally {
-    showLoader('loader-num', false);
+    showError(res, 'API Error: ' + e.message);
   }
 }
 
-// ============ 2. VEHICLE INFO ============
-async function fetchVehicleInfo() {
-  const xr = document.getElementById('vehicle-input').value.trim().toUpperCase();
-  if (!/^[A-Z]{2}\d{1,2}[A-Z]{1,3}\d{4}$/.test(xr)) {
-    return showResult('result-vehicle', '❌ Valid vehicle number daaliye (e.g. HR55AL0051).', true);
-  }
-  showLoader('loader-vehicle', true);
+/* ================= API 2: VEHICLE INFO ================= */
+async function getVehicleInfo() {
+  const veh = document.getElementById('vehInput').value.trim().toUpperCase();
+  const res = document.getElementById('vehResult');
+  if (!veh) return showError(res, 'Vehicle number daalein.');
+
+  showLoader(res);
   try {
-    const url = `${API_BASE}?=ultra_vehicle&key=demo&xr=${encodeURIComponent(xr)}`;
-    const data = await callApi(url);
-    showResult('result-vehicle', data);
+    const url = `https://api.sarkariallupdates.com/api?=ultra_vehicle&key=demo&xr=${veh}`;
+    const r = await fetch(url);
+    const data = await r.json();
+    res.innerHTML = renderData(data, 'Vehicle Full Info');
   } catch (e) {
-    showResult('result-vehicle', '❌ Error: ' + e.message, true);
-  } finally {
-    showLoader('loader-vehicle', false);
+    showError(res, 'API Error: ' + e.message);
   }
 }
 
-// ============ 3. AADHAAR INFO ============
-async function fetchAadhaarInfo() {
-  const q = document.getElementById('aadhaar-input').value.trim();
-  if (!/^\d{12}$/.test(q)) {
-    return showResult('result-aadhaar', '❌ Valid 12-digit Aadhaar number daaliye.', true);
-  }
-  showLoader('loader-aadhaar', true);
+/* ================= API 3: AADHAAR INFO ================= */
+async function getAadhaarInfo() {
+  const aad = document.getElementById('aadInput').value.trim();
+  const res = document.getElementById('aadResult');
+  if (!aad || aad.length !== 12) return showError(res, 'Valid 12-digit Aadhaar number daalein.');
+
+  showLoader(res);
   try {
-    const url = `${API_BASE}?=addhaar2num&key=${API_KEY}&q=${encodeURIComponent(q)}`;
-    const data = await callApi(url);
-    showResult('result-aadhaar', data);
+    const url = `https://api.sarkariallupdates.com/api?=addhaar2num&key=30day&q=${aad}`;
+    const r = await fetch(url);
+    const data = await r.json();
+    res.innerHTML = renderData(data, 'Aadhaar Info');
   } catch (e) {
-    showResult('result-aadhaar', '❌ Error: ' + e.message, true);
-  } finally {
-    showLoader('loader-aadhaar', false);
+    showError(res, 'API Error: ' + e.message);
   }
 }
-
-// Enter key support
-document.getElementById('num-input').addEventListener('keydown', e => e.key === 'Enter' && fetchNumberInfo());
-document.getElementById('vehicle-input').addEventListener('keydown', e => e.key === 'Enter' && fetchVehicleInfo());
-document.getElementById('aadhaar-input').addEventListener('keydown', e => e.key === 'Enter' && fetchAadhaarInfo());
 </script>
 
 </body>
 </html>
-
