@@ -1,0 +1,413 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>API Tools — Login & Admin</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: system-ui, -apple-system, sans-serif; background: #eef1f6; padding: 20px; color: #222; }
+  .container { max-width: 950px; margin: 0 auto; }
+  .card { background: #fff; border-radius: 12px; padding: 24px; margin-bottom: 20px; box-shadow: 0 2px 10px rgba(0,0,0,0.07); }
+  h1 { font-size: 22px; margin-bottom: 6px; }
+  h2 { font-size: 18px; margin-bottom: 14px; }
+  p.sub { color: #666; font-size: 13px; margin-bottom: 18px; }
+  input, button, select { font-size: 15px; padding: 10px 14px; border-radius: 8px; border: 1px solid #ccd2dd; font-family: inherit; }
+  input { width: 100%; margin-bottom: 12px; background: #fafbfc; }
+  button { background: #1a73e8; color: #fff; border: none; cursor: pointer; font-weight: 500; transition: background .15s; }
+  button:hover { background: #1557b0; }
+  button:disabled { background: #aab; cursor: not-allowed; }
+  .danger { background: #d93025; }
+  .danger:hover { background: #b3261e; }
+  .success { background: #1e8e3e; }
+  .success:hover { background: #166b2e; }
+  .warn { background: #f9ab00; color: #222; }
+  .warn:hover { background: #e09a00; }
+  .row { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 12px; }
+  .row > * { flex: 1; min-width: 160px; }
+  .row > button { flex: 0 0 auto; min-width: 120px; }
+  .hidden { display: none !important; }
+  .result { background: #0f172a; color: #d1fae5; border-radius: 8px; padding: 16px; margin-top: 14px; white-space: pre-wrap; word-break: break-all; font-family: 'Courier New', monospace; font-size: 13px; max-height: 420px; overflow: auto; }
+  .user-bar { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; margin-bottom: 20px; padding-bottom: 16px; border-bottom: 1px solid #eee; }
+  .badge { display: inline-block; background: #e8f0fe; color: #1a73e8; padding: 5px 12px; border-radius: 20px; font-size: 13px; font-weight: 500; margin-left: 8px; }
+  .badge.admin { background: #fef7e0; color: #b06000; }
+  .msg { margin-top: 12px; font-size: 14px; min-height: 20px; }
+  .msg.error { color: #d93025; }
+  .msg.ok { color: #1e8e3e; }
+  table { width: 100%; border-collapse: collapse; font-size: 14px; margin-top: 10px; }
+  th, td { text-align: left; padding: 10px 8px; border-bottom: 1px solid #eee; }
+  th { background: #f7f9fc; font-weight: 600; font-size: 13px; color: #555; }
+  .credit-input { width: 90px; margin: 0; padding: 6px 8px; font-size: 13px; }
+  .small-btn { padding: 6px 12px; font-size: 13px; min-width: auto; }
+  .tabs { display: flex; gap: 8px; margin-bottom: 16px; }
+  .tabs button { background: #f0f2f5; color: #444; }
+  .tabs button.active { background: #1a73e8; color: #fff; }
+  .info-box { background: #fff8e1; border-left: 4px solid #f9ab00; padding: 12px 16px; border-radius: 6px; font-size: 13px; color: #664d03; margin-bottom: 16px; line-height: 1.5; }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <!-- ============ LOGIN / REGISTER ============ -->
+  <div id="loginSection" class="card">
+    <h1>🔐 API Tools Login</h1>
+    <p class="sub">Login with your mobile number and password. (Password ≥ 6 characters.)</p>
+
+    <div class="info-box">
+      <strong>First time admin setup:</strong> Register with your number → then open Firebase Console → Firestore → <code>users</code> collection → open your document → set <code>role: "admin"</code> and <code>credits: 9999</code>. Reload and login again.
+    </div>
+
+    <input type="tel" id="loginNumber" placeholder="Mobile number (10 digits)" maxlength="10" autocomplete="username">
+    <input type="password" id="loginPassword" placeholder="Password" autocomplete="current-password">
+
+    <div class="row">
+      <button onclick="login()" id="loginBtn">Login</button>
+      <button onclick="register()" id="regBtn" class="success">Register</button>
+    </div>
+    <div class="msg" id="loginMsg"></div>
+  </div>
+
+  <!-- ============ MAIN APP ============ -->
+  <div id="appSection" class="hidden">
+
+    <!-- User bar -->
+    <div class="card" style="padding: 18px 24px;">
+      <div class="user-bar" style="margin:0;padding:0;border:none;">
+        <div>
+          <strong id="userDisplay"></strong>
+          <span class="badge" id="userCredits"></span>
+          <span class="badge admin hidden" id="userRoleBadge">ADMIN</span>
+        </div>
+        <div class="row" style="margin:0;">
+          <button onclick="toggleAdmin()" id="adminBtn" class="warn hidden">👑 Admin Panel</button>
+          <button onclick="logout()" class="danger">Logout</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Tabs -->
+    <div class="tabs">
+      <button id="tabTools" class="active" onclick="switchTab('tools')">🔍 API Tools</button>
+      <button id="tabAdmin" class="hidden" onclick="switchTab('admin')">👑 Admin Panel</button>
+    </div>
+
+    <!-- API Tools -->
+    <div id="userTools" class="card">
+      <h2>API Lookup</h2>
+
+      <div class="row">
+        <input type="text" id="numInput" placeholder="Phone number (e.g. 9162516577)">
+        <button onclick="callNumInfo()">Num Info</button>
+      </div>
+
+      <div class="row">
+        <input type="text" id="vehicleInput" placeholder="Vehicle no (e.g. HR55AL0051)">
+        <button onclick="callVehicle()">Vehicle Info</button>
+      </div>
+
+      <div class="row">
+        <input type="text" id="aadhaarInput" placeholder="Aadhaar number (12 digits)">
+        <button onclick="callAadhaar()">Aadhaar Info</button>
+      </div>
+
+      <div id="apiResult" class="result hidden"></div>
+    </div>
+
+    <!-- Admin Panel -->
+    <div id="adminPanel" class="card hidden">
+      <h2>👑 Admin — Manage Users & Credits</h2>
+      <p class="sub">Change a user's credits by typing a value and pressing Set.</p>
+      <div id="userList">Loading…</div>
+    </div>
+
+  </div>
+</div>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+import {
+  getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword,
+  signOut, onAuthStateChanged
+} from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+import {
+  getFirestore, doc, getDoc, setDoc, updateDoc,
+  collection, getDocs
+} from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+/* ============ ⚠️ REPLACE THIS WITH YOUR FIREBASE CONFIG ============ */
+const firebaseConfig = {
+  apiKey: "YOUR_API_KEY",
+  authDomain: "YOUR_PROJECT.firebaseapp.com",
+  projectId: "YOUR_PROJECT_ID",
+  storageBucket: "YOUR_PROJECT.appspot.com",
+  messagingSenderId: "YOUR_SENDER_ID",
+  appId: "YOUR_APP_ID"
+};
+/* =================================================================== */
+
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getFirestore(app);
+
+let currentUser = null;
+let isAdmin = false;
+let currentEmailSuffix = "@demo.com";   // numbers are converted to emails internally
+
+/* ---------- helpers ---------- */
+function numberToEmail(num) {
+  return String(num).replace(/\D/g, "") + currentEmailSuffix;
+}
+function showMsg(text, type = "") {
+  const el = document.getElementById("loginMsg");
+  el.textContent = text;
+  el.className = "msg " + type;
+}
+function setBusy(busy) {
+  document.getElementById("loginBtn").disabled = busy;
+  document.getElementById("regBtn").disabled = busy;
+}
+
+/* ---------- LOGIN / REGISTER ---------- */
+window.login = async function () {
+  const num = document.getElementById("loginNumber").value.trim();
+  const pwd = document.getElementById("loginPassword").value;
+  showMsg("");
+  if (num.length < 10) return showMsg("Enter a valid 10-digit mobile number.", "error");
+  if (pwd.length < 6) return showMsg("Password must be at least 6 characters.", "error");
+
+  setBusy(true);
+  try {
+    await signInWithEmailAndPassword(auth, numberToEmail(num), pwd);
+    showMsg("Login successful.", "ok");
+  } catch (e) {
+    showMsg("Login failed: " + friendlyError(e.code), "error");
+  }
+  setBusy(false);
+};
+
+window.register = async function () {
+  const num = document.getElementById("loginNumber").value.trim();
+  const pwd = document.getElementById("loginPassword").value;
+  showMsg("");
+  if (num.length < 10) return showMsg("Enter a valid 10-digit mobile number.", "error");
+  if (pwd.length < 6) return showMsg("Password must be at least 6 characters.", "error");
+
+  setBusy(true);
+  try {
+    const cred = await createUserWithEmailAndPassword(auth, numberToEmail(num), pwd);
+    await setDoc(doc(db, "users", cred.user.uid), {
+      number: num,
+      email: numberToEmail(num),
+      credits: 0,
+      role: "user",
+      createdAt: Date.now()
+    });
+    showMsg("Registered! You are now logged in.", "ok");
+  } catch (e) {
+    showMsg("Register failed: " + friendlyError(e.code), "error");
+  }
+  setBusy(false);
+};
+
+window.logout = function () { signOut(auth); };
+
+function friendlyError(code) {
+  const map = {
+    "auth/invalid-credential": "Wrong number or password.",
+    "auth/user-not-found": "No account found with this number. Register first.",
+    "auth/wrong-password": "Wrong password.",
+    "auth/email-already-in-use": "This number is already registered. Try Login.",
+    "auth/weak-password": "Password too weak (min 6 chars).",
+    "auth/too-many-requests": "Too many attempts. Wait a minute."
+  };
+  return map[code] || code || "Unknown error";
+}
+
+/* ---------- AUTH STATE ---------- */
+onAuthStateChanged(auth, async (user) => {
+  const loginSec = document.getElementById("loginSection");
+  const appSec = document.getElementById("appSection");
+
+  if (user) {
+    currentUser = user;
+    loginSec.classList.add("hidden");
+    appSec.classList.remove("hidden");
+
+    const ref = doc(db, "users", user.uid);
+    const snap = await getDoc(ref);
+    let data = {};
+
+    if (snap.exists()) {
+      data = snap.data();
+    } else {
+      // fallback for accounts created outside the app
+      data = { email: user.email, number: user.email.split("@")[0], credits: 0, role: "user" };
+      await setDoc(ref, data);
+    }
+
+    isAdmin = data.role === "admin";
+
+    document.getElementById("userDisplay").textContent =
+      "👤 " + (data.number || user.email.split("@")[0]);
+    document.getElementById("userCredits").textContent =
+      "Credits: " + (data.credits ?? 0);
+    document.getElementById("userRoleBadge").classList.toggle("hidden", !isAdmin);
+    document.getElementById("adminBtn").classList.toggle("hidden", !isAdmin);
+    document.getElementById("tabAdmin").classList.toggle("hidden", !isAdmin);
+
+    if (!isAdmin) switchTab("tools");
+  } else {
+    currentUser = null;
+    isAdmin = false;
+    loginSec.classList.remove("hidden");
+    appSec.classList.add("hidden");
+    document.getElementById("apiResult").classList.add("hidden");
+    document.getElementById("loginPassword").value = "";
+  }
+});
+
+/* ---------- TABS ---------- */
+window.switchTab = function (which) {
+  const tools = document.getElementById("userTools");
+  const admin = document.getElementById("adminPanel");
+  const tabT = document.getElementById("tabTools");
+  const tabA = document.getElementById("tabAdmin");
+
+  if (which === "tools") {
+    tools.classList.remove("hidden");
+    admin.classList.add("hidden");
+    tabT.classList.add("active");
+    tabA.classList.remove("active");
+  } else {
+    tools.classList.add("hidden");
+    admin.classList.remove("hidden");
+    tabT.classList.remove("active");
+    tabA.classList.add("active");
+    loadAdminUsers();
+  }
+};
+
+window.toggleAdmin = function () {
+  if (!isAdmin) return;
+  switchTab("admin");
+  document.getElementById("adminPanel").scrollIntoView({ behavior: "smooth" });
+};
+
+/* ---------- API CALLS (keys are exposed! demo only) ---------- */
+function renderResult(obj) {
+  const el = document.getElementById("apiResult");
+  el.classList.remove("hidden");
+  el.textContent = typeof obj === "string" ? obj : JSON.stringify(obj, null, 2);
+}
+
+async function safeFetch(url) {
+  const res = await fetch(url);
+  const text = await res.text();
+  try { return JSON.parse(text); } catch { return text; }
+}
+
+window.callNumInfo = async function () {
+  const num = document.getElementById("numInput").value.trim();
+  if (!num) return renderResult("Please enter a phone number.");
+  renderResult("Loading…");
+  try {
+    const data = await safeFetch(
+      `https://api.sarkariallupdates.com/api?=num_info&key=30day&num=${encodeURIComponent(num)}`
+    );
+    renderResult(data);
+  } catch (e) { renderResult("Error: " + e.message); }
+};
+
+window.callVehicle = async function () {
+  const xr = document.getElementById("vehicleInput").value.trim();
+  if (!xr) return renderResult("Please enter a vehicle number.");
+  renderResult("Loading…");
+  try {
+    const data = await safeFetch(
+      `https://api.sarkariallupdates.com/api?=ultra_vehicle&key=demo&xr=${encodeURIComponent(xr)}`
+    );
+    renderResult(data);
+  } catch (e) { renderResult("Error: " + e.message); }
+};
+
+window.callAadhaar = async function () {
+  const q = document.getElementById("aadhaarInput").value.trim();
+  if (!q) return renderResult("Please enter an Aadhaar number.");
+  renderResult("Loading…");
+  try {
+    const data = await safeFetch(
+      `https://api.sarkariallupdates.com/api?=addhaar2num&key=30day&q=${encodeURIComponent(q)}`
+    );
+    renderResult(data);
+  } catch (e) { renderResult("Error: " + e.message); }
+};
+
+/* ---------- ADMIN ---------- */
+async function loadAdminUsers() {
+  const wrap = document.getElementById("userList");
+  wrap.textContent = "Loading…";
+  try {
+    const snap = await getDocs(collection(db, "users"));
+    if (snap.empty) { wrap.innerHTML = "<p>No users yet.</p>"; return; }
+
+    let html = `<table>
+      <thead><tr>
+        <th>Number</th>
+        <th>Email / ID</th>
+        <th>Role</th>
+        <th>Credits</th>
+        <th>Set Credits</th>
+      </tr></thead><tbody>`;
+
+    snap.forEach((d) => {
+      const u = d.data();
+      const num = u.number || "—";
+      const email = u.email || d.id;
+      const role = u.role || "user";
+      const credits = u.credits ?? 0;
+      html += `<tr>
+        <td>${num}</td>
+        <td style="font-size:12px;color:#666;">${email}</td>
+        <td><span class="badge ${role === "admin" ? "admin" : ""}">${role}</span></td>
+        <td><strong>${credits}</strong></td>
+        <td>
+          <input type="number" class="credit-input" id="c_${d.id}" value="${credits}">
+          <button class="small-btn" onclick="setCredits('${d.id}')">Set</button>
+          <button class="small-btn danger" onclick="toggleRole('${d.id}','${role}')">
+            ${role === "admin" ? "Demote" : "Promote"}
+          </button>
+        </td>
+      </tr>`;
+    });
+
+    html += "</tbody></table>";
+    wrap.innerHTML = html;
+  } catch (e) {
+    wrap.innerHTML = `<p style="color:#d93025;">Error: ${e.message}</p>`;
+  }
+}
+
+window.setCredits = async function (uid) {
+  if (!isAdmin) return alert("Not authorized.");
+  const v = parseInt(document.getElementById("c_" + uid).value, 10);
+  if (isNaN(v) || v < 0) return alert("Enter a valid non-negative number.");
+  try {
+    await updateDoc(doc(db, "users", uid), { credits: v });
+    alert("Credits updated to " + v);
+  } catch (e) { alert("Error: " + e.message); }
+};
+
+window.toggleRole = async function (uid, currentRole) {
+  if (!isAdmin) return alert("Not authorized.");
+  if (uid === currentUser.uid && currentRole === "admin") {
+    if (!confirm("You are about to demote YOURSELF. Continue?")) return;
+  }
+  const newRole = currentRole === "admin" ? "user" : "admin";
+  try {
+    await updateDoc(doc(db, "users", uid), { role: newRole });
+    loadAdminUsers();
+  } catch (e) { alert("Error: " + e.message); }
+};
+</script>
+</body>
+</html>
