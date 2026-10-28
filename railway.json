@@ -1,1 +1,1 @@
-{ "startCommand": "gunicorn ludo:app" }
+{ "startCommand": "gunicorn main:app" }
