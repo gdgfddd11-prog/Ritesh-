@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>RITESH | EXPLOITS — Premium API Hub</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@600;800&family=Rajdhani:wght@500;600;700&display=swap');
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Rajdhani','Segoe UI',sans-serif;background:radial-gradient(circle at 20% 10%,#0a1a3f 0%,#050b1e 45%,#000308 100%);min-height:100vh;padding:20px;color:#d6ecff;overflow-x:hidden;position:relative}
+body:before{content:'';position:fixed;inset:0;background:radial-gradient(circle at 15% 25%,rgba(0,140,255,.18),transparent 45%),radial-gradient(circle at 85% 75%,rgba(0,200,255,.14),transparent 45%),radial-gradient(circle at 50% 50%,rgba(80,0,255,.08),transparent 55%);pointer-events:none;z-index:0}
+.container{max-width:940px;margin:0 auto;position:relative;z-index:1}
+.logo{text-align:center;margin-bottom:22px;padding:8px 0}.logo-text{font-family:Orbitron,sans-serif;font-weight:800;font-size:26px;letter-spacing:3px;background:linear-gradient(90deg,#00e0ff,#00a2ff,#7b5cff,#00e0ff);background-size:300% 100%;-webkit-background-clip:text;-webkit-text-fill-color:transparent;animation:shine 5s linear infinite;filter:drop-shadow(0 0 12px rgba(0,180,255,.6))}.logo-sub{font-family:Orbitron,sans-serif;font-size:10px;letter-spacing:6px;color:#4fa8ff;margin-top:6px;opacity:.8}
+@keyframes shine{to{background-position:300% 50%}}
+.card{background:linear-gradient(145deg,rgba(10,25,60,.92),rgba(4,10,30,.96));border:1px solid rgba(0,180,255,.35);border-radius:18px;padding:26px;margin-bottom:22px;box-shadow:0 8px 40px rgba(0,120,255,.25),inset 0 0 60px rgba(0,120,255,.05);position:relative;overflow:hidden;backdrop-filter:blur(12px)}
+.card:before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,#00d4ff,#0084ff,#00d4ff,transparent);background-size:200% 100%;animation:borderRun 4s linear infinite}
+@keyframes borderRun{to{background-position:200% 0}}
+h1,h2,h3{font-family:Orbitron,sans-serif;color:#c9e6ff;margin-bottom:16px;letter-spacing:1px;text-shadow:0 0 12px rgba(0,150,255,.4)}h1{font-size:22px}h2{font-size:18px}
+input,select{width:100%;padding:13px 15px;margin:9px 0;background:rgba(5,15,40,.85);border:1px solid rgba(0,160,255,.35);border-radius:10px;font-size:15px;color:#d6ecff;font-family:Rajdhani,sans-serif;font-weight:600;outline:none}
+input::placeholder{color:#4a6c99}input:focus,select:focus{border-color:#00d4ff;box-shadow:0 0 0 3px rgba(0,180,255,.18),0 0 20px rgba(0,180,255,.35)}
+button{width:100%;padding:13px;margin:9px 0;border:0;border-radius:10px;cursor:pointer;font-weight:700;font-size:15px;font-family:Orbitron,sans-serif;letter-spacing:1px;background:linear-gradient(135deg,#0084ff,#00d4ff);color:#001428;box-shadow:0 0 20px rgba(0,180,255,.45);transition:.25s}button:hover{transform:translateY(-2px);filter:brightness(1.12)}button.green{background:linear-gradient(135deg,#00ffa3,#00d4ff);color:#001f1a}
+.nav{background:linear-gradient(145deg,rgba(8,20,50,.95),rgba(3,8,25,.98));border:1px solid rgba(0,180,255,.3);border-radius:14px;padding:14px 20px;display:flex;justify-content:space-between;align-items:center;margin-bottom:22px;box-shadow:0 0 24px rgba(0,140,255,.25);flex-wrap:wrap;gap:8px}.nav strong{font-family:Orbitron,sans-serif;color:#00d4ff;font-size:13px}.nav a{color:#7ec4ff;text-decoration:none;font-weight:700;margin-left:15px}.balance{background:linear-gradient(135deg,rgba(0,255,160,.12),rgba(0,180,255,.1));border:1px solid rgba(0,255,180,.4);padding:12px 18px;border-radius:10px;color:#6dffce;font-weight:700;margin-bottom:16px;font-family:Orbitron,sans-serif;font-size:13px;text-align:center}
+.notice{padding:12px 14px;border:1px solid rgba(0,180,255,.3);border-radius:10px;color:#8fcaff;background:rgba(0,100,255,.08);margin:12px 0;font-size:14px}.result-card{margin-top:20px;background:linear-gradient(145deg,rgba(6,18,45,.95),rgba(2,8,22,.98));border:1px solid rgba(0,200,255,.4);border-radius:14px;overflow:hidden;box-shadow:0 0 30px rgba(0,150,255,.3)}.result-header{background:rgba(0,180,255,.15);padding:14px 18px;border-bottom:1px solid rgba(0,180,255,.3);font-family:Orbitron,sans-serif;font-weight:800;letter-spacing:2px;font-size:13px;color:#00e0ff;display:flex;justify-content:space-between}.result-row{display:flex;gap:12px;padding:10px 18px;border-bottom:1px dashed rgba(0,150,255,.15);overflow-wrap:anywhere}.result-key{flex:0 0 38%;color:#5fa8ff;font-weight:700;font-size:13px;text-transform:uppercase}.result-val{flex:1;color:#d6ecff;font-weight:600;font-size:14px;white-space:pre-wrap;overflow-wrap:anywhere}.status{color:#6dffce}.error{color:#ff9bb3}.small{font-size:12px;color:#7298c5;line-height:1.5;margin-top:10px}
+@media(max-width:600px){body{padding:12px}.logo-text{font-size:19px;letter-spacing:1.5px}.logo-sub{font-size:8px;letter-spacing:4px}.card{padding:18px}.nav{padding:12px}.result-key{flex-basis:42%;font-size:11px}.result-val{font-size:12px}}
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="logo"><div class="logo-text">⏤͟͟͞͞RITESH | EXPLOITS</div><div class="logo-sub">PREMIUM API HUB</div></div>
+  <div class="nav"><strong>📡 API DASHBOARD</strong><span>HTML FRONTEND</span></div>
+  <div class="card">
+    <h1>🔎 API SEARCH</h1>
+    <div class="notice">This is a standalone HTML frontend. A browser may block API requests because of CORS. Login, database balances, user management and admin history from the original Flask app require the Python backend.</div>
+    <form id="searchForm">
+      <select id="api_type" name="api_type">
+        <option value="num_info">📞 Mobile Number Info</option>
+        <option value="ultra_vehicle">🚗 Vehicle Info</option>
+      </select>
+      <input id="query" name="query" placeholder="Enter Mobile Number (10 digit)" autocomplete="off" required>
+      <button class="green" id="searchBtn" type="submit">🔍 SEARCH</button>
+    </form>
+    <div class="small">Use only APIs and records you are authorized to access. This static page does not store user accounts or balances.</div>
+    <div id="output" aria-live="polite"></div>
+  </div>
+</div>
+<script>
+const API_BASE = "https://api.allprinthub.in/api";
+const keys = { num_info: "30day", ultra_vehicle: "demo" };
+const type = document.getElementById("api_type");
+const query = document.getElementById("query");
+const output = document.getElementById("output");
+const btn = document.getElementById("searchBtn");
+
+function updatePlaceholder(){
+  query.placeholder = type.value === "num_info"
+    ? "Enter Mobile Number (10 digit)"
+    : "Enter Vehicle Number (e.g. HR55AL0051)";
+}
+type.addEventListener("change", updatePlaceholder);
+updatePlaceholder();
+
+function addRow(parent, key, value) {
+  const row = document.createElement("div"); row.className = "result-row";
+  const k = document.createElement("div"); k.className = "result-key"; k.textContent = String(key).replace(/[_-]/g," ");
+  const v = document.createElement("div"); v.className = "result-val";
+  if (value && typeof value === "object") {
+    if (Array.isArray(value)) {
+      if (!value.length) v.textContent = "[empty]";
+      else value.forEach((item, i) => addRow(v, i + 1, item));
+    } else {
+      Object.entries(value).forEach(([childKey, childVal]) => addRow(v, childKey, childVal));
+    }
+  } else {
+    v.textContent = value === null || value === "" || value === undefined ? "—" : String(value);
+  }
+  row.append(k, v); parent.append(row);
+}
+function showResult(data) {
+  output.replaceChildren();
+  const card = document.createElement("div"); card.className = "result-card";
+  const header = document.createElement("div"); header.className = "result-header";
+  const title = document.createElement("span"); title.textContent = "📋 RESULT DATA";
+  const status = document.createElement("span");
+  const ok = data && ["success","true","ok","1"].includes(String(data.status).toLowerCase());
+  status.className = ok ? "status" : "error"; status.textContent = ok ? "SUCCESS" : "RESPONSE";
+  header.append(title,status); card.append(header);
+  if (data && typeof data === "object" && !Array.isArray(data)) {
+    Object.entries(data).forEach(([k,v]) => { if (!["status","success"].includes(k.toLowerCase())) addRow(card,k,v); });
+  } else addRow(card,"Result",data);
+  output.append(card);
+}
+document.getElementById("searchForm").addEventListener("submit", async (event) => {
+  event.preventDefault();
+  const apiType = type.value;
+  const value = query.value.trim();
+  if (!value) return;
+  const params = new URLSearchParams();
+  params.append("", apiType);
+  params.append("key", keys[apiType]);
+  params.append(apiType === "num_info" ? "num" : "xr", value);
+  output.innerHTML = '<div class="notice">Searching…</div>';
+  btn.disabled = true; btn.textContent = "PLEASE WAIT…";
+  try {
+    const response = await fetch(API_BASE + "?" + params.toString(), {method:"GET"});
+    const raw = await response.text();
+    let data;
+    try { data = JSON.parse(raw); } catch { data = {response: raw}; }
+    if (!response.ok) data = {status:"error", message:"API returned HTTP " + response.status, details:data};
+    showResult(data);
+  } catch (err) {
+    output.innerHTML = '<div class="notice error">Request failed. This may be caused by browser CORS restrictions or network/API availability. For reliable API calls, use the Python backend.</div>';
+  } finally {
+    btn.disabled = false; btn.textContent = "🔍 SEARCH";
+  }
+});
+</script>
+</body>
+</html>
