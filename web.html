@@ -1,0 +1,562 @@
+CREATE DATABASE IF NOT EXISTS allprinthub_db;
+USE allprinthub_db;
+
+-- Users table
+CREATE TABLE users (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    mobile VARCHAR(15) UNIQUE NOT NULL,
+    password VARCHAR(255) NOT NULL,
+    credits INT DEFAULT 0,
+    role ENUM('user','admin') DEFAULT 'user',
+    status ENUM('active','blocked') DEFAULT 'active',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- API Keys (admin manage karega)
+CREATE TABLE api_keys (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    api_name VARCHAR(50) UNIQUE NOT NULL,
+    api_key VARCHAR(255) NOT NULL,
+    cost INT DEFAULT 1,
+    status ENUM('active','inactive') DEFAULT 'active'
+);
+
+-- Search Logs
+CREATE TABLE search_logs (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    user_id INT,
+    api_name VARCHAR(50),
+    query_value VARCHAR(255),
+    response LONGTEXT,
+    credits_used INT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES users(id)
+);
+
+-- Recharge History
+CREATE TABLE recharges (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    user_id INT,
+    amount INT,
+    credits_added INT,
+    type ENUM('auto','admin') DEFAULT 'admin',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES users(id)
+);
+
+-- Default API keys (admin panel se change kar sakte hain)
+INSERT INTO api_keys (api_name, api_key, cost) VALUES
+('num_info', '30day', 5),
+('ultra_vehicle', 'demo', 5),
+('addhaar2num', '30day', 5);
+
+-- Default admin (mobile: 7838630423, password: ritesh111)
+INSERT INTO users (mobile, password, credits, role) VALUES
+('9999999999', '$2y$10$e0MYzXyjpJS7Pd0RVvHwHe1HlCS4bZJ18JuywdBmVXNZ1UZ1UZ1UZ', 9999, 'admin');
+<?php
+session_start();
+error_reporting(E_ALL);
+ini_set('display_errors', 0);
+
+// ==================== DB CONFIG ====================
+define('DB_HOST', 'localhost');
+define('DB_USER', 'root');
+define('DB_PASS', '');
+define('DB_NAME', 'allprinthub_db');
+
+try {
+    $pdo = new PDO("mysql:host=".DB_HOST.";dbname=".DB_NAME.";charset=utf8mb4", DB_USER, DB_PASS, [
+        PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
+        PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
+    ]);
+} catch (Exception $e) {
+    die("DB Error: " . $e->getMessage());
+}
+
+// ==================== HELPERS ====================
+function esc($s){ return htmlspecialchars($s ?? '', ENT_QUOTES, 'UTF-8'); }
+function redirect($u){ header("Location: $u"); exit; }
+function isLoggedIn(){ return isset($_SESSION['user_id']); }
+function isAdmin(){ return isset($_SESSION['role']) && $_SESSION['role']==='admin'; }
+
+function currentUser($pdo){
+    if(!isLoggedIn()) return null;
+    $st = $pdo->prepare("SELECT * FROM users WHERE id=?");
+    $st->execute([$_SESSION['user_id']]);
+    return $st->fetch();
+}
+
+function getApiKey($pdo, $name){
+    $st = $pdo->prepare("SELECT * FROM api_keys WHERE api_name=? AND status='active'");
+    $st->execute([$name]);
+    return $st->fetch();
+}
+
+function callApi($url){
+    $ch = curl_init($url);
+    curl_setopt_array($ch, [
+        CURLOPT_RETURNTRANSFER => true,
+        CURLOPT_TIMEOUT => 30,
+        CURLOPT_SSL_VERIFYPEER => false,
+        CURLOPT_USERAGENT => 'Mozilla/5.0'
+    ]);
+    $res = curl_exec($ch);
+    curl_close($ch);
+    return $res;
+}
+
+// Pretty-print any API response to HTML cards
+function renderResult($data){
+    if (is_string($data)) {
+        $json = json_decode($data, true);
+        if ($json === null) {
+            // Not JSON, just text
+            return '<div class="kv"><span>Response</span><b>'.esc($data).'</b></div>';
+        }
+        $data = $json;
+    }
+    return '<div class="result-grid">'.renderNode($data).'</div>';
+}
+
+function renderNode($node){
+    $html = '';
+    if (is_array($node)) {
+        foreach ($node as $k => $v) {
+            if (is_array($v)) {
+                $html .= '<div class="card-block"><div class="card-title">'.esc(ucwords(str_replace(['_','-'],' ',$k))).'</div>'.renderNode($v).'</div>';
+            } else {
+                $html .= '<div class="kv"><span>'.esc(ucwords(str_replace(['_','-'],' ',$k))).'</span><b>'.esc((string)$v).'</b></div>';
+            }
+        }
+    } else {
+        $html = '<div class="kv"><b>'.esc((string)$node).'</b></div>';
+    }
+    return $html;
+}
+
+// ==================== ROUTER ====================
+$page = $_GET['page'] ?? 'home';
+$action = $_POST['action'] ?? '';
+
+// ---- LOGOUT ----
+if($page==='logout'){ session_destroy(); redirect('?page=login'); }
+
+// ---- LOGIN ----
+if($action==='login'){
+    $mobile = trim($_POST['mobile'] ?? '');
+    $pass = $_POST['password'] ?? '';
+    $st = $pdo->prepare("SELECT * FROM users WHERE mobile=?");
+    $st->execute([$mobile]);
+    $u = $st->fetch();
+    if($u && password_verify($pass, $u['password'])){
+        if($u['status']!=='active'){ $error = "Account blocked. Contact admin."; }
+        else {
+            $_SESSION['user_id']=$u['id'];
+            $_SESSION['role']=$u['role'];
+            redirect('?page=dashboard');
+        }
+    } else $error = "Invalid mobile or password";
+}
+
+// ---- REGISTER ----
+if($action==='register'){
+    $mobile = trim($_POST['mobile'] ?? '');
+    $pass = $_POST['password'] ?? '';
+    if(strlen($mobile)!=10 || !ctype_digit($mobile)) $error = "Valid 10-digit mobile daalein";
+    elseif(strlen($pass)<6) $error = "Password min 6 characters";
+    else {
+        $st = $pdo->prepare("SELECT id FROM users WHERE mobile=?");
+        $st->execute([$mobile]);
+        if($st->fetch()) $error = "Mobile already registered";
+        else {
+            $hash = password_hash($pass, PASSWORD_DEFAULT);
+            $pdo->prepare("INSERT INTO users (mobile,password,credits) VALUES (?,?,0)")
+                ->execute([$mobile,$hash]);
+            $error = "Registered! Please login.";
+        }
+    }
+}
+
+// ---- SEARCH (user) ----
+if($action==='search' && isLoggedIn()){
+    $api = $_POST['api'] ?? '';
+    $val = trim($_POST['value'] ?? '');
+    $user = currentUser($pdo);
+    $allowed = ['num_info','ultra_vehicle','addhaar2num'];
+
+    if(!in_array($api, $allowed)) $search_error = "Invalid API";
+    elseif($val==='') $search_error = "Value required";
+    elseif($user['credits'] < 1) $search_error = "Insufficient credits! Please recharge.";
+    else {
+        $keyRow = getApiKey($pdo, $api);
+        if(!$keyRow) $search_error = "API not configured. Contact admin.";
+        else {
+            // Build URL
+            $key = urlencode($keyRow['api_key']);
+            if($api==='num_info'){
+                $url = "https://api.allprinthub.in/api?=num_info&key=$key&num=".urlencode($val);
+            } elseif($api==='ultra_vehicle'){
+                $url = "https://api.allprinthub.in/api?=ultra_vehicle&key=$key&xr=".urlencode($val);
+            } else {
+                $url = "https://api.allprinthub.in/api?=addhaar2num&key=$key&q=".urlencode($val);
+            }
+
+            $resp = callApi($url);
+            if($resp === false){
+                $search_error = "API request failed";
+            } else {
+                // Deduct 1 credit + log
+                $cost = (int)$keyRow['cost'];
+                $pdo->prepare("UPDATE users SET credits = credits - ? WHERE id=?")->execute([$cost, $user['id']]);
+                $pdo->prepare("INSERT INTO search_logs (user_id,api_name,query_value,response,credits_used) VALUES (?,?,?,?,?)")
+                    ->execute([$user['id'], $api, $val, $resp, $cost]);
+
+                $search_result = $resp;
+                $search_api = $api;
+                $search_val = $val;
+            }
+        }
+    }
+}
+
+// ---- ADMIN: add credits ----
+if($action==='admin_add_credits' && isAdmin()){
+    $uid = (int)$_POST['user_id'];
+    $amt = (int)$_POST['credits'];
+    if($uid>0 && $amt>0){
+        $pdo->prepare("UPDATE users SET credits = credits + ? WHERE id=?")->execute([$amt,$uid]);
+        $pdo->prepare("INSERT INTO recharges (user_id,amount,credits_added,type) VALUES (?,?,?,'admin')")
+            ->execute([$uid, $amt*5, $amt]);
+        $admin_msg = "₹".($amt*5)." recharge — $amt credits added";
+    }
+}
+
+// ---- ADMIN: toggle user ----
+if($action==='admin_toggle_user' && isAdmin()){
+    $uid = (int)$_POST['user_id'];
+    $pdo->prepare("UPDATE users SET status = IF(status='active','blocked','active') WHERE id=? AND role!='admin'")->execute([$uid]);
+    $admin_msg = "User status updated";
+}
+
+// ---- ADMIN: update api key ----
+if($action==='admin_update_api' && isAdmin()){
+    $id = (int)$_POST['api_id'];
+    $key = trim($_POST['api_key']);
+    $cost = (int)$_POST['cost'];
+    $status = $_POST['status']==='active'?'active':'inactive';
+    $pdo->prepare("UPDATE api_keys SET api_key=?, cost=?, status=? WHERE id=?")->execute([$key,$cost,$status,$id]);
+    $admin_msg = "API key updated";
+}
+
+// ---- USER: recharge request (auto demo — ₹5 = 1 credit) ----
+if($action==='self_recharge' && isLoggedIn()){
+    $amt = (int)$_POST['amount'];
+    if($amt>=5){
+        $credits = intdiv($amt,5);
+        $pdo->prepare("UPDATE users SET credits = credits + ? WHERE id=?")->execute([$credits, $_SESSION['user_id']]);
+        $pdo->prepare("INSERT INTO recharges (user_id,amount,credits_added,type) VALUES (?,?,?,'auto')")
+            ->execute([$_SESSION['user_id'], $amt, $credits]);
+        $recharge_msg = "₹$amt recharge successful — $credits credits added! (Demo mode)";
+    }
+}
+?>
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AllPrintHub API Portal</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box;font-family:'Inter',sans-serif}
+body{background:linear-gradient(135deg,#0f172a 0%,#1e293b 50%,#312e81 100%);min-height:100vh;color:#e2e8f0;padding:16px}
+.nav{background:rgba(255,255,255,0.05);backdrop-filter:blur(12px);border:1px solid rgba(255,255,255,0.1);border-radius:16px;padding:14px 20px;display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;flex-wrap:wrap;gap:10px}
+.nav h1{font-size:18px;background:linear-gradient(135deg,#60a5fa,#a78bfa);-webkit-background-clip:text;-webkit-text-fill-color:transparent;font-weight:800}
+.nav-links{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.nav-links a{color:#cbd5e1;text-decoration:none;padding:8px 14px;border-radius:10px;font-size:13px;font-weight:600;transition:.2s}
+.nav-links a:hover{background:rgba(96,165,250,.2);color:#fff}
+.badge-credits{background:linear-gradient(135deg,#10b981,#059669);padding:8px 14px;border-radius:10px;font-weight:700;font-size:13px}
+.container{max-width:1000px;margin:0 auto}
+.card{background:rgba(255,255,255,0.06);backdrop-filter:blur(12px);border:1px solid rgba(255,255,255,0.1);border-radius:20px;padding:28px;margin-bottom:20px;box-shadow:0 20px 50px rgba(0,0,0,.3)}
+.hero{text-align:center;padding:40px 20px}
+.hero h2{font-size:32px;margin-bottom:12px;background:linear-gradient(135deg,#60a5fa,#a78bfa,#f472b6);-webkit-background-clip:text;-webkit-text-fill-color:transparent;font-weight:800}
+.hero p{color:#94a3b8;margin-bottom:24px;font-size:15px}
+.btn{display:inline-block;padding:12px 26px;border-radius:12px;background:linear-gradient(135deg,#3b82f6,#8b5cf6);color:#fff;text-decoration:none;font-weight:700;border:none;cursor:pointer;font-size:14px;transition:.2s;box-shadow:0 8px 20px rgba(99,102,241,.4)}
+.btn:hover{transform:translateY(-2px);box-shadow:0 12px 28px rgba(99,102,241,.6)}
+.btn-ghost{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.15);box-shadow:none}
+.btn-danger{background:linear-gradient(135deg,#ef4444,#b91c1c);box-shadow:0 8px 20px rgba(239,68,68,.3)}
+.btn-success{background:linear-gradient(135deg,#10b981,#059669);box-shadow:0 8px 20px rgba(16,185,129,.3)}
+.form-group{margin-bottom:16px}
+.form-group label{display:block;margin-bottom:6px;font-size:13px;color:#94a3b8;font-weight:600}
+.form-group input,.form-group select{width:100%;padding:12px 14px;background:rgba(0,0,0,.3);border:1px solid rgba(255,255,255,.1);border-radius:10px;color:#fff;font-size:14px;outline:none;transition:.2s}
+.form-group input:focus,.form-group select:focus{border-color:#60a5fa;background:rgba(0,0,0,.5)}
+.tabs{display:flex;gap:8px;margin-bottom:20px;flex-wrap:wrap}
+.tab{padding:10px 18px;border-radius:10px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);color:#cbd5e1;cursor:pointer;font-size:13px;font-weight:600;transition:.2s}
+.tab.active{background:linear-gradient(135deg,#3b82f6,#8b5cf6);color:#fff;border-color:transparent}
+.error{background:rgba(239,68,68,.15);border:1px solid rgba(239,68,68,.4);color:#fca5a5;padding:12px;border-radius:10px;margin-bottom:16px;font-size:14px}
+.success{background:rgba(16,185,129,.15);border:1px solid rgba(16,185,129,.4);color:#6ee7b7;padding:12px;border-radius:10px;margin-bottom:16px;font-size:14px}
+.result-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:12px;margin-top:16px}
+.kv{background:linear-gradient(135deg,rgba(59,130,246,.12),rgba(139,92,246,.12));border:1px solid rgba(96,165,250,.25);border-radius:12px;padding:14px;display:flex;flex-direction:column;gap:4px}
+.kv span{font-size:11px;text-transform:uppercase;color:#94a3b8;font-weight:600;letter-spacing:.5px}
+.kv b{font-size:15px;color:#fff;word-break:break-word}
+.card-block{grid-column:1/-1;background:rgba(0,0,0,.2);border-radius:12px;padding:14px;border:1px solid rgba(255,255,255,.08)}
+.card-title{font-weight:700;color:#a78bfa;margin-bottom:10px;font-size:14px;text-transform:uppercase;letter-spacing:.5px}
+table{width:100%;border-collapse:collapse;font-size:13px}
+table th{text-align:left;padding:10px;background:rgba(255,255,255,.05);color:#94a3b8;font-weight:600;font-size:11px;text-transform:uppercase}
+table td{padding:10px;border-top:1px solid rgba(255,255,255,.06)}
+table tr:hover td{background:rgba(255,255,255,.02)}
+.badge{padding:3px 10px;border-radius:6px;font-size:11px;font-weight:700}
+.badge-active{background:rgba(16,185,129,.2);color:#6ee7b7}
+.badge-blocked{background:rgba(239,68,68,.2);color:#fca5a5}
+.badge-admin{background:rgba(168,85,247,.2);color:#c4b5fd}
+.footer{text-align:center;color:#64748b;font-size:12px;padding:20px}
+</style>
+</head>
+<body>
+
+<div class="container">
+    <!-- NAV -->
+    <div class="nav">
+        <h1>⚡ AllPrintHub API</h1>
+        <div class="nav-links">
+            <?php if(isLoggedIn()): 
+                $u = currentUser($pdo);
+            ?>
+                <span class="badge-credits">💰 <?= (int)$u['credits'] ?> credits</span>
+                <a href="?page=dashboard">Dashboard</a>
+                <a href="?page=recharge">Recharge</a>
+                <?php if(isAdmin()): ?><a href="?page=admin">⚙️ Admin</a><?php endif; ?>
+                <a href="?page=logout" class="btn-ghost btn" style="padding:8px 14px">Logout</a>
+            <?php else: ?>
+                <a href="?page=login">Login</a>
+                <a href="?page=register" class="btn" style="padding:8px 16px">Register</a>
+            <?php endif; ?>
+        </div>
+    </div>
+
+    <?php
+    // ============ HOME ============
+    if($page==='home'): ?>
+        <div class="card hero">
+            <h2>🚀 Premium API Portal</h2>
+            <p>Number Info • Vehicle Details • Aadhaar to Number — sab ek jagah!</p>
+            <p style="color:#fbbf24;font-weight:700;margin-bottom:24px">💎 Sirf ₹5 = 1 Search</p>
+            <?php if(isLoggedIn()): ?>
+                <a href="?page=dashboard" class="btn">Go to Dashboard →</a>
+            <?php else: ?>
+                <a href="?page=register" class="btn">Get Started Free</a>
+                <a href="?page=login" class="btn btn-ghost">Login</a>
+            <?php endif; ?>
+        </div>
+
+    <?php
+    // ============ LOGIN ============
+    elseif($page==='login'): ?>
+        <div class="card" style="max-width:420px;margin:40px auto">
+            <h2 style="margin-bottom:20px;font-size:22px">🔐 Login</h2>
+            <?php if(!empty($error)): ?><div class="error"><?= esc($error) ?></div><?php endif; ?>
+            <form method="post">
+                <input type="hidden" name="action" value="login">
+                <div class="form-group"><label>Mobile Number</label><input type="tel" name="mobile" required maxlength="10"></div>
+                <div class="form-group"><label>Password</label><input type="password" name="password" required></div>
+                <button class="btn" style="width:100%">Login</button>
+            </form>
+            <p style="margin-top:16px;text-align:center;color:#94a3b8;font-size:13px">New? <a href="?page=register" style="color:#60a5fa">Register</a></p>
+        </div>
+
+    <?php
+    // ============ REGISTER ============
+    elseif($page==='register'): ?>
+        <div class="card" style="max-width:420px;margin:40px auto">
+            <h2 style="margin-bottom:20px;font-size:22px">📝 Register</h2>
+            <?php if(!empty($error)): ?><div class="<?= strpos($error,'Registered')!==false?'success':'error' ?>"><?= esc($error) ?></div><?php endif; ?>
+            <form method="post">
+                <input type="hidden" name="action" value="register">
+                <div class="form-group"><label>Mobile Number</label><input type="tel" name="mobile" required maxlength="10"></div>
+                <div class="form-group"><label>Password (min 6)</label><input type="password" name="password" required minlength="6"></div>
+                <button class="btn" style="width:100%">Create Account</button>
+            </form>
+            <p style="margin-top:16px;text-align:center;color:#94a3b8;font-size:13px">Already? <a href="?page=login" style="color:#60a5fa">Login</a></p>
+        </div>
+
+    <?php
+    // ============ DASHBOARD ============
+    elseif($page==='dashboard' && isLoggedIn()):
+        $u = currentUser($pdo);
+        $logs = $pdo->prepare("SELECT * FROM search_logs WHERE user_id=? ORDER BY id DESC LIMIT 10");
+        $logs->execute([$u['id']]);
+        $logs = $logs->fetchAll();
+    ?>
+        <div class="card">
+            <h2 style="margin-bottom:20px;font-size:20px">🔍 Search API</h2>
+            <?php if(!empty($search_error)): ?><div class="error"><?= esc($search_error) ?></div><?php endif; ?>
+            <div class="tabs">
+                <div class="tab active" onclick="setApi('num_info',this)">📱 Number Info</div>
+                <div class="tab" onclick="setApi('ultra_vehicle',this)">🚗 Vehicle Info</div>
+                <div class="tab" onclick="setApi('addhaar2num',this)">🆔 Aadhaar → Number</div>
+            </div>
+            <form method="post">
+                <input type="hidden" name="action" value="search">
+                <input type="hidden" name="api" id="apiField" value="num_info">
+                <div class="form-group">
+                    <label>Enter Value</label>
+                    <input type="text" name="value" required placeholder="Enter number / vehicle / aadhaar">
+                </div>
+                <button class="btn">🔍 Search (Cost: ₹5)</button>
+                <span style="margin-left:10px;color:#94a3b8;font-size:13px">Balance: <?= (int)$u['credits'] ?> credits</span>
+            </form>
+        </div>
+
+        <?php if(!empty($search_result)): ?>
+        <div class="card">
+            <h2 style="margin-bottom:16px;font-size:18px">✅ Result — <?= esc($search_val) ?></h2>
+            <?= renderResult($search_result) ?>
+        </div>
+        <?php endif; ?>
+
+        <div class="card">
+            <h2 style="margin-bottom:16px;font-size:18px">📜 Recent History</h2>
+            <?php if(empty($logs)): ?><p style="color:#94a3b8">No searches yet.</p><?php else: ?>
+            <table>
+                <tr><th>API</th><th>Query</th><th>Credits</th><th>Time</th></tr>
+                <?php foreach($logs as $l): ?>
+                <tr>
+                    <td><?= esc($l['api_name']) ?></td>
+                    <td><?= esc($l['query_value']) ?></td>
+                    <td><?= (int)$l['credits_used'] ?></td>
+                    <td><?= esc($l['created_at']) ?></td>
+                </tr>
+                <?php endforeach; ?>
+            </table>
+            <?php endif; ?>
+        </div>
+
+        <script>
+        function setApi(a,el){
+            document.getElementById('apiField').value=a;
+            document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+            el.classList.add('active');
+        }
+        </script>
+
+    <?php
+    // ============ RECHARGE ============
+    elseif($page==='recharge' && isLoggedIn()):
+        $u = currentUser($pdo);
+        $rh = $pdo->prepare("SELECT * FROM recharges WHERE user_id=? ORDER BY id DESC LIMIT 10");
+        $rh->execute([$u['id']]);
+        $rh = $rh->fetchAll();
+    ?>
+        <div class="card" style="max-width:500px;margin:0 auto">
+            <h2 style="margin-bottom:8px;font-size:20px">💳 Recharge</h2>
+            <p style="color:#94a3b8;font-size:13px;margin-bottom:20px">₹5 = 1 Search Credit</p>
+            <?php if(!empty($recharge_msg)): ?><div class="success"><?= esc($recharge_msg) ?></div><?php endif; ?>
+            <form method="post">
+                <input type="hidden" name="action" value="self_recharge">
+                <div class="form-group"><label>Amount (₹)</label><input type="number" name="amount" min="5" step="5" value="50" required></div>
+                <button class="btn btn-success" style="width:100%">Add Credits</button>
+            </form>
+            <p style="color:#fbbf24;font-size:12px;margin-top:12px;text-align:center">⚠️ Demo mode — real payment gateway pending</p>
+        </div>
+        <div class="card">
+            <h2 style="margin-bottom:16px;font-size:18px">📋 Recharge History</h2>
+            <?php if(empty($rh)): ?><p style="color:#94a3b8">No recharges yet.</p><?php else: ?>
+            <table>
+                <tr><th>Amount</th><th>Credits</th><th>Type</th><th>Time</th></tr>
+                <?php foreach($rh as $r): ?>
+                <tr><td>₹<?= (int)$r['amount'] ?></td><td>+<?= (int)$r['credits_added'] ?></td><td><?= esc($r['type']) ?></td><td><?= esc($r['created_at']) ?></td></tr>
+                <?php endforeach; ?>
+            </table>
+            <?php endif; ?>
+        </div>
+
+    <?php
+    // ============ ADMIN PANEL ============
+    elseif($page==='admin' && isAdmin()):
+        $users = $pdo->query("SELECT * FROM users ORDER BY id DESC")->fetchAll();
+        $apis = $pdo->query("SELECT * FROM api_keys")->fetchAll();
+        $stats = $pdo->query("SELECT COUNT(*) c FROM search_logs")->fetch()['c'];
+    ?>
+        <?php if(!empty($admin_msg)): ?><div class="success"><?= esc($admin_msg) ?></div><?php endif; ?>
+        <div class="card">
+            <h2 style="font-size:20px;margin-bottom:8px">⚙️ Admin Panel</h2>
+            <p style="color:#94a3b8;font-size:13px">Total Searches: <b><?= (int)$stats ?></b></p>
+        </div>
+
+        <div class="card">
+            <h2 style="font-size:17px;margin-bottom:16px">👥 Users</h2>
+            <table>
+                <tr><th>ID</th><th>Mobile</th><th>Credits</th><th>Role</th><th>Status</th><th>Action</th></tr>
+                <?php foreach($users as $usr): ?>
+                <tr>
+                    <td><?= (int)$usr['id'] ?></td>
+                    <td><?= esc($usr['mobile']) ?></td>
+                    <td><?= (int)$usr['credits'] ?></td>
+                    <td><span class="badge <?= $usr['role']==='admin'?'badge-admin':'' ?>"><?= esc($usr['role']) ?></span></td>
+                    <td><span class="badge <?= $usr['status']==='active'?'badge-active':'badge-blocked' ?>"><?= esc($usr['status']) ?></span></td>
+                    <td style="display:flex;gap:6px;flex-wrap:wrap">
+                        <form method="post" style="display:inline">
+                            <input type="hidden" name="action" value="admin_add_credits">
+                            <input type="hidden" name="user_id" value="<?= (int)$usr['id'] ?>">
+                            <input type="number" name="credits" placeholder="+Credits" style="width:80px;padding:6px;background:rgba(0,0,0,.3);border:1px solid rgba(255,255,255,.1);color:#fff;border-radius:6px" required>
+                            <button class="btn btn-success" style="padding:6px 10px;font-size:11px">Add</button>
+                        </form>
+                        <?php if($usr['role']!=='admin'): ?>
+                        <form method="post" style="display:inline">
+                            <input type="hidden" name="action" value="admin_toggle_user">
+                            <input type="hidden" name="user_id" value="<?= (int)$usr['id'] ?>">
+                            <button class="btn btn-danger" style="padding:6px 10px;font-size:11px"><?= $usr['status']==='active'?'Block':'Unblock' ?></button>
+                        </form>
+                        <?php endif; ?>
+                    </td>
+                </tr>
+                <?php endforeach; ?>
+            </table>
+        </div>
+
+        <div class="card">
+            <h2 style="font-size:17px;margin-bottom:16px">🔑 API Keys</h2>
+            <?php foreach($apis as $api): ?>
+            <form method="post" style="background:rgba(0,0,0,.2);padding:14px;border-radius:12px;margin-bottom:12px">
+                <input type="hidden" name="action" value="admin_update_api">
+                <input type="hidden" name="api_id" value="<?= (int)$api['id'] ?>">
+                <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:end">
+                    <div style="flex:1;min-width:140px">
+                        <label style="font-size:11px;color:#94a3b8">API</label>
+                        <div style="padding:8px;color:#a78bfa;font-weight:700"><?= esc($api['api_name']) ?></div>
+                    </div>
+                    <div style="flex:2;min-width:180px">
+                        <label style="font-size:11px;color:#94a3b8">Key</label>
+                        <input type="text" name="api_key" value="<?= esc($api['api_key']) ?>" style="width:100%;padding:8px;background:rgba(0,0,0,.3);border:1px solid rgba(255,255,255,.1);color:#fff;border-radius:6px">
+                    </div>
+                    <div style="width:80px">
+                        <label style="font-size:11px;color:#94a3b8">Cost</label>
+                        <input type="number" name="cost" value="<?= (int)$api['cost'] ?>" style="width:100%;padding:8px;background:rgba(0,0,0,.3);border:1px solid rgba(255,255,255,.1);color:#fff;border-radius:6px">
+                    </div>
+                    <div style="width:110px">
+                        <label style="font-size:11px;color:#94a3b8">Status</label>
+                        <select name="status" style="width:100%;padding:8px;background:rgba(0,0,0,.3);border:1px solid rgba(255,255,255,.1);color:#fff;border-radius:6px">
+                            <option value="active" <?= $api['status']==='active'?'selected':'' ?>>Active</option>
+                            <option value="inactive" <?= $api['status']==='inactive'?'selected':'' ?>>Inactive</option>
+                        </select>
+                    </div>
+                    <button class="btn" style="padding:8px 14px;font-size:12px">Update</button>
+                </div>
+            </form>
+            <?php endforeach; ?>
+        </div>
+
+    <?php
+    // ============ 404 ============
+    else: ?>
+        <div class="card" style="text-align:center;padding:60px">
+            <h2 style="font-size:48px;margin-bottom:12px">🔒</h2>
+            <p style="color:#94a3b8;margin-bottom:20px">Page not found or access denied.</p>
+            <a href="?page=home" class="btn">Go Home</a>
+        </div>
+    <?php endif; ?>
+
+    <div class="footer">© <?= date('Y') ?> AllPrintHub Portal — Made with ❤️</div>
+</div>
+</body>
+</html>
