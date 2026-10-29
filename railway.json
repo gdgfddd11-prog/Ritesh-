@@ -1,1 +1,1 @@
-{ "startCommand": "gunicorn main:app" }
+{"deploy": {"startCommand": "gunicorn main:app"}}
